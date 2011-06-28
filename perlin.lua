@@ -18,7 +18,7 @@ function perlinComponent1D(seed, length, N, amplitude)
   rawData = {}
   finalData = {}
   for i = 1, math.ceil(length/N) + 3 do
-    rawData[i] = amplitude * rand(seed, i)
+    rawData[i] = amplitude * rand:get(seed, i)
   end
   interpData = interpolate1D(rawData, N)
   assert(#interpData >= length)
@@ -86,7 +86,7 @@ function perlinComponent2D(seed, width, height, N, amplitude)
   for r = 1, math.ceil(height/N) + 3 do
     rawData[r] = {}
     for c = 1, math.ceil(width/N) + 3 do
-      rawData[r][c] = amplitude * rand(seed+r, c)
+      rawData[r][c] = amplitude * rand:get(seed+r, c)
     end
   end
   interpData = interpolate2D(rawData, N)

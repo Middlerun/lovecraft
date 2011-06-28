@@ -4,10 +4,9 @@ love.filesystem.setIdentity("lovecraft")
 air = 0
 stone = 1
 dirt = 3
+rand = {mySeed = 1, lastN = -1}
 
 function love.load()
-  lastN = -1
-  mySeed = 1
   showPerlin = 0
   
   terrain = makeTerrain()
@@ -40,16 +39,16 @@ function love.keyreleased(k)
 
 end
 
-function rand(seed, n)
+function rand:get(seed, n)
   if n <= 0 then return nil end
-  if seed ~= mySeed or lastN < 0 or n <= lastN then
-    mySeed = seed
+  if seed ~= self.mySeed or self.lastN < 0 or n <= self.lastN then
+    self.mySeed = seed
     math.randomseed(seed)
-    lastN = 0
+    self.lastN = 0
   end
-  while lastN < n do
+  while self.lastN < n do
     num = math.random()
-    lastN = lastN + 1
+    self.lastN = self.lastN + 1
   end
   return num - 0.5
 end
@@ -75,7 +74,7 @@ function makeTerrain(seed)
   terrain = {}
   if seed == nil then seed = os.time() end
   terrain.seed = seed
-  terrain.perlin = perlin2D(seed, 341, 256, 0.90, 20, 1)
+  terrain.perlin = perlin2D(seed, 341, 256, 0.9, 20, 1)
   terrain.value = {}
   for r = 1, #terrain.perlin do
     terrain.value[r] = {}
