@@ -111,7 +111,7 @@ function perlin2D(seed, width, height, persistence, N, amplitude)
   for i = N, 1, -1 do
     compInterp = 2^(i-1)
     compAmplitude = amplitude * persistence^(N-i)
-    comp = perlinComponent2D(seed+i*1000, width, height, i, compAmplitude)
+    comp = perlinComponent2D(seed+i*1000, width, height, compInterp, compAmplitude)
     for r = 1, height do
       for c = 1, width do
         data[r][c] = data[r][c] + comp[r][c]
@@ -119,5 +119,22 @@ function perlin2D(seed, width, height, persistence, N, amplitude)
     end
   end
   return data
+end
+
+function plot1D(values)
+  love.graphics.line(0, love.graphics.getHeight()/2 - 200, love.graphics.getWidth(), love.graphics.getHeight()/2 - 200)
+  love.graphics.line(0, love.graphics.getHeight()/2 + 200, love.graphics.getWidth(), love.graphics.getHeight()/2 + 200)
+  for i = 1, #values - 1 do
+    love.graphics.line((i-1)/(#values-1)*love.graphics.getWidth(), love.graphics.getHeight()/2 - values[i] * 400, (i)/(#values-1)*love.graphics.getWidth(), love.graphics.getHeight()/2 - values[i+1] * 400)
+  end
+end
+
+function plot2D(values)
+  for r = 1, #values do
+    for c = 1, #(values[1]) do
+      love.graphics.setColor(128 + 80 * values[r][c], 128 + 80 * values[r][c], 128 + 80 * values[r][c], 255)
+      love.graphics.rectangle("fill", (c-1)/(#(values[1]))*love.graphics.getWidth(), (r-1)/(#values)*love.graphics.getHeight(), love.graphics.getWidth()/#(values[1]), love.graphics.getHeight()/#values)
+    end
+  end
 end
 

@@ -12,8 +12,8 @@ function Terrain:new(seed)
   return o
 end
 
-function Terrain:addChunk(r, c, chunk)
-  if self.chunk[r] == nil do self.chunk[r] = {}
+function Terrain:addChunk(chunk, r, c)
+  if self.chunk[r] == nil then self.chunk[r] = {} end
   self.chunk[r][c] = chunk
 end
 
