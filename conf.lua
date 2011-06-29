@@ -6,5 +6,5 @@ function love.conf(t)
   t.version = 0.72
   t.modules.joystick = false
   t.modules.physics = false
-  t.modules.mouse = false
+  t.modules.mouse = true
 end

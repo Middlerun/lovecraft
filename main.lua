@@ -9,7 +9,12 @@ stone = 1
 dirt = 3
 coalOre = 16
 rand = {mySeed = 1, lastN = -1}
-view = {zoom = 4, x = 0, y = 0}
+view = {zoom = 32, x = 0, y = 0}
+images = {}
+images[stone] = love.graphics.newImage("gfx/stone.png")
+images[dirt] = love.graphics.newImage("gfx/dirt.png")
+images[coalOre] = love.graphics.newImage("gfx/coalOre.png")
+cursor = {x = 0, y = 0}
 
 function love.load()
   showPerlin = false
@@ -30,25 +35,59 @@ function love.load()
 end
 
 function love.update(dt)
-  if not first and player.falling then player.vy = player.vy + 9.8 * dt end
+  if not first and player.falling then
+    player.vy = player.vy + 40 * dt
+    if     love.keyboard.isDown("a")  then player.vx = math.max(-8, player.vx - 8 * dt)
+    elseif love.keyboard.isDown("d") then player.vx = math.min(8, player.vx + 8 * dt)
+    end
+  end
   if not first and not player.falling then
-    if love.keyboard.isDown("left") then player.vx = -8
-    elseif love.keyboard.isDown("right") then player.vx = 8
-    else player.vx = 0
+    if     love.keyboard.isDown("a")  then player.vx = math.max(-8, player.vx - 64 * dt)
+    elseif love.keyboard.isDown("d") then player.vx = math.min(8, player.vx + 64 * dt)
+    elseif player.vx > 0 then player.vx = math.max(0, player.vx - 128 * dt)
+    elseif player.vx < 0 then player.vx = math.min(0, player.vx + 128 * dt)
     end
   end
   player.x = player.x + player.vx * dt
   player.y = player.y + player.vy * dt
   
-  if terrain:getValue(math.ceil(player.y), math.ceil(player.x)) ~= air then
-    player.falling = false
+  if terrain:getValue(math.ceil(player.y - player.height), math.ceil(player.x)) ~= air then
     player.vy = 0
-    player.y = math.ceil(player.y)
+    player.y = math.ceil(player.y - player.height) + player.height
   end
   
+  if player.x % 1 < player.width / 2 then
+    if   terrain:getValue(math.floor(player.y) - 1, math.floor(player.x)) ~= air
+    or   terrain:getValue(math.floor(player.y) + 0, math.floor(player.x)) ~= air then
+      player.vx = 0
+      player.x = math.floor(player.x) + 1.1 * player.width / 2
+    end
+  elseif player.x % 1 > 1 - player.width / 2 then
+    if   terrain:getValue(math.floor(player.y) - 1, math.floor(player.x) + 2) ~= air
+    or   terrain:getValue(math.floor(player.y) + 0, math.floor(player.x) + 2) ~= air then
+      player.vx = 0
+      player.x = math.floor(player.x) + 1 - 1.1 * player.width / 2
+    end
+  end
+  
+  if terrain:getValue(math.floor(player.y) + 1, math.floor(player.x - player.width / 2) + 1) == air
+   and terrain:getValue(math.floor(player.y) + 1, math.floor(player.x + player.width / 2) + 1) == air then
+    player.falling = true
+  else
+    player.falling = false
+    player.vy = 0
+    player.y = math.floor(player.y)
+  end
+  
+  --view.x = view.x + (player.x - view.x) * 0.2
+  --view.y = view.y + (player.y - view.y) * 0.2
   view.x = player.x
-  view.y = player.y
+  view.y = player.y + player.height / 2
   first = false
+  
+  cursor.x = (love.mouse.getX() - love.graphics.getWidth()  / 2) / view.zoom + view.x
+  cursor.y = (love.mouse.getY() - love.graphics.getHeight() / 2) / view.zoom + view.y
+  
 end
 
 function love.draw()
@@ -59,12 +98,16 @@ function love.draw()
     drawTerrain(terrain, view.zoom, view.x, view.y)
   end
   love.graphics.setColor(255, 255, 255, 255)
-  love.graphics.draw(player.image, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/64, view.zoom/64, player.image:getWidth()/2, player.image:getHeight())
+  love.graphics.draw(player.image, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/64, view.zoom/64, player.image:getWidth()/2, player.image:getHeight())
+  --love.graphics.line((player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y-1.5)*view.zoom+love.graphics.getHeight()/2, (cursor.x-view.x)*view.zoom + love.graphics.getWidth()/2, (cursor.y-view.y)*view.zoom+love.graphics.getHeight()/2)
 end
 
 function love.keypressed(k, u)
-  if k == "r" then
-    terrain = makeTerrain()
+  --if k == "r" then
+    --terrain = makeTerrain()
+  if k == "w" and not player.falling then
+    player.falling = true
+    player.vy = -16
   elseif k == "p" then
     showPerlin = not showPerlin
   elseif k == "escape" then
@@ -93,41 +136,6 @@ function rand:get(seed, n)
   return num - 0.5
 end
 
-function makeTerrain(seed)
-  terrain = {}
-  if seed == nil then seed = os.time() end
-  terrain.seed = seed
-  terrain.perlin = perlin2D(seed, 341, 256, 0.55, 6, 1)
-  terrain.value = {}
-  for r = 1, #terrain.perlin do
-    terrain.value[r] = {}
-    dirtMargin = (256-r) * 0.01
-    for c = 1, #(terrain.perlin[r]) do
-      value = terrain.perlin[r][c]
-      if r < 128 then
-        value = value + (128 - r) * 0.02
-      end
-      if value > 0.5 then terrain.value[r][c] = air
-      elseif value > 1.4 - dirtMargin or value < -0.6 then terrain.value[r][c] = dirt
-      else terrain.value[r][c] = stone
-      end
-    end
-  end
-  return terrain
-end
-
-function drawTerrainOld(terrain)
-  for r = 1, #terrain.value do
-    for c = 1, #(terrain.value[1]) do
-      if terrain.value[r][c] ~= air then
-        if terrain.value[r][c] == stone then love.graphics.setColor(163, 163, 163, 255) end
-        if terrain.value[r][c] == dirt then love.graphics.setColor(130, 97, 21, 255) end
-        love.graphics.rectangle("fill", (c-1)/(#(terrain.value[1]))*love.graphics.getWidth(), (r-1)/(#terrain.value)*love.graphics.getHeight(), love.graphics.getWidth()/#(terrain.value[1]), love.graphics.getHeight()/#terrain.value)
-      end
-    end
-  end
-end
-
 function drawTerrain(terrain, zoom, x, y)
   for r = -2, 1 do
     for c = -2, 1 do
@@ -136,7 +144,7 @@ function drawTerrain(terrain, zoom, x, y)
   end
 end
 
-function drawChunk(chunk, zoom, x, y)
+function drawChunkPlain(chunk, zoom, x, y)
   for r = 1, 32 do
     for c = 1, 32 do
       if chunk.value[r][c] ~= air then
@@ -144,6 +152,17 @@ function drawChunk(chunk, zoom, x, y)
         if chunk.value[r][c] == dirt then love.graphics.setColor(130, 97, 21, 255) end
         if chunk.value[r][c] == coalOre then love.graphics.setColor(50, 50, 50, 255) end
         love.graphics.rectangle("fill", (c-1-x)*zoom + love.graphics.getWidth()/2, (r-1-y)*zoom+love.graphics.getHeight()/2, zoom, zoom)
+      end
+    end
+  end
+end
+
+function drawChunk(chunk, zoom, x, y)
+  for r = 1, 32 do
+    for c = 1, 32 do
+      if chunk.value[r][c] ~= air then
+        love.graphics.setColor(255, 255, 255, 255)
+        love.graphics.draw(images[chunk.value[r][c]], (c-1-x)*zoom + love.graphics.getWidth()/2, (r-1-y)*zoom+love.graphics.getHeight()/2, 0, zoom/16, zoom/16)
       end
     end
   end
