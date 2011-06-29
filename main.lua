@@ -1,6 +1,7 @@
 love.filesystem.load("perlin.lua")()
 love.filesystem.load("chunk.lua")()
 love.filesystem.load("terrain.lua")()
+love.filesystem.load("player.lua")()
 love.filesystem.setIdentity("lovecraft")
 
 air = 0
@@ -8,32 +9,57 @@ stone = 1
 dirt = 3
 coalOre = 16
 rand = {mySeed = 1, lastN = -1}
+view = {zoom = 4, x = 0, y = 0}
 
 function love.load()
   showPerlin = false
-  zoom = 32
+  
+  player = Player:new()
   
   terrain = Terrain:new()
-  for r = -5, 4 do
-    for c = -5, 4 do
+  for r = -2, 1 do
+    for c = -2, 1 do
       chunk = Chunk:new()
       chunk:generate(terrain:getSeed(), r, c)
       terrain:addChunk(chunk, r, c)
     end
   end
   
+  first = true
+  
 end
 
 function love.update(dt)
+  if not first and player.falling then player.vy = player.vy + 9.8 * dt end
+  if not first and not player.falling then
+    if love.keyboard.isDown("left") then player.vx = -8
+    elseif love.keyboard.isDown("right") then player.vx = 8
+    else player.vx = 0
+    end
+  end
+  player.x = player.x + player.vx * dt
+  player.y = player.y + player.vy * dt
+  
+  if terrain:getValue(math.ceil(player.y), math.ceil(player.x)) ~= air then
+    player.falling = false
+    player.vy = 0
+    player.y = math.ceil(player.y)
+  end
+  
+  view.x = player.x
+  view.y = player.y
+  first = false
 end
 
 function love.draw()
-  if showPerlin then drawTerrainPerlin(terrain, zoom, 0, 0)
+  if showPerlin then drawTerrainPerlin(terrain, view.zoom, view.x, view.y)
   else
     love.graphics.setColor(161, 235, 255, 255)
     love.graphics.rectangle("fill", -1, -1, love.graphics.getWidth()+2, love.graphics.getHeight()+2)
-    drawTerrain(terrain, zoom, 0, 0)
+    drawTerrain(terrain, view.zoom, view.x, view.y)
   end
+  love.graphics.setColor(255, 255, 255, 255)
+  love.graphics.draw(player.image, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/64, view.zoom/64, player.image:getWidth()/2, player.image:getHeight())
 end
 
 function love.keypressed(k, u)
@@ -103,8 +129,8 @@ function drawTerrainOld(terrain)
 end
 
 function drawTerrain(terrain, zoom, x, y)
-  for r = -5, 4 do
-    for c = -5, 4 do
+  for r = -2, 1 do
+    for c = -2, 1 do
       drawChunk(terrain:getChunk(r, c), zoom, x-32*c, y-32*r)
     end
   end
@@ -124,8 +150,8 @@ function drawChunk(chunk, zoom, x, y)
 end
 
 function drawTerrainPerlin(terrain, zoom, x, y)
-  for r = -5, 4 do
-    for c = -5, 4 do
+  for r = -2, 1 do
+    for c = -2, 1 do
       drawChunkPerlin(terrain:getChunk(r, c), zoom, x-32*c, y-32*r)
     end
   end

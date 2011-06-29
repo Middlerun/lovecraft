@@ -5,9 +5,7 @@ function Terrain:new(seed)
   setmetatable(o, self)
   self.__index = self
   
-  if seed == nil then o.seed = os.time()
-  else o.seed = seed
-  end
+  o.seed = seed or os.time()
   o.chunk = {}
   
   return o
@@ -29,16 +27,16 @@ function Terrain:hasChunk(r, c)
 end
 
 function Terrain:setValue(r, c, value)
-  relR = r % 32
-  relC = r % 32
+  relR = (r - 1) % 32 + 1
+  relC = (c - 1) % 32 + 1
   chunkR = (r - relR) / 32
   chunkC = (c - relC) / 32
   self:getChunk(chunkR, chunkC):setValue(relR, relC, value)
 end
 
 function Terrain:getValue(r, c)
-  relR = r % 32
-  relC = r % 32
+  relR = (r - 1) % 32 + 1
+  relC = (c - 1) % 32 + 1
   chunkR = (r - relR) / 32
   chunkC = (c - relC) / 32
   return self:getChunk(chunkR, chunkC):getValue(relR, relC)
