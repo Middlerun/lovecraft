@@ -69,7 +69,7 @@ function Chunk:generatePerlin(seed, chunkR, chunkC)
   for i = N, 1, -1 do
     compInterp = 2^(i-1)
     compAmplitude = amplitude * persistence^(N-i)
-    comp = self:perlinComponent2D(seed+i*1000, chunkR, chunkC, compInterp, compAmplitude)
+    comp = self:perlinComponent2D(seed+i*571, chunkR, chunkC, compInterp, compAmplitude)
     for r = 1, 32 do
       for c = 1, 32 do
         data[r][c] = data[r][c] + comp[r][c]
@@ -93,10 +93,10 @@ function Chunk:perlinComponent2D(seed, chunkR, chunkC, N, amplitude)
   
   local rawData = {}
   local finalData = {}
-  for r = leftEdge2, rightEdge2 do
-    rawData[r - leftEdge2 + 1] = {}
-    for c = topEdge2, bottomEdge2 do
-      rawData[r - leftEdge2 + 1][c - topEdge2 + 1] = amplitude * rand:get(seed + 1000*N + r, c)
+  for r = topEdge2, bottomEdge2 do
+    rawData[r - topEdge2 + 1] = {}
+    for c = leftEdge2, rightEdge2 do
+      rawData[r - topEdge2 + 1][c - leftEdge2 + 1] = amplitude * rand:get(seed + r, c)
     end
   end
   
