@@ -6,24 +6,21 @@ love.filesystem.setIdentity("lovecraft")
 air = 0
 stone = 1
 dirt = 3
+coalOre = 16
 rand = {mySeed = 1, lastN = -1}
 
 function love.load()
   showPerlin = false
+  zoom = 32
   
-  terrain = Terrain:new(1)
-  chunk1 = Chunk:new()
-  chunk1:generate(1, 0, 0)
-  terrain:addChunk(chunk1, 0, 0)
-  chunk2 = Chunk:new()
-  chunk2:generate(1, 0, 1)
-  terrain:addChunk(chunk2, 0, 1)
-  chunk3 = Chunk:new()
-  chunk3:generate(1, 1, 0)
-  terrain:addChunk(chunk3, 1, 0)
-  chunk4 = Chunk:new()
-  chunk4:generate(1, 1, 1)
-  terrain:addChunk(chunk4, 1, 1)
+  terrain = Terrain:new()
+  for r = -5, 4 do
+    for c = -5, 4 do
+      chunk = Chunk:new()
+      chunk:generate(terrain:getSeed(), r, c)
+      terrain:addChunk(chunk, r, c)
+    end
+  end
   
 end
 
@@ -31,11 +28,11 @@ function love.update(dt)
 end
 
 function love.draw()
-  if showPerlin then drawTerrainPerlin(terrain, 4, 0, 0)
+  if showPerlin then drawTerrainPerlin(terrain, zoom, 0, 0)
   else
     love.graphics.setColor(161, 235, 255, 255)
     love.graphics.rectangle("fill", -1, -1, love.graphics.getWidth()+2, love.graphics.getHeight()+2)
-    drawTerrain(terrain, 4, 0, 0)
+    drawTerrain(terrain, zoom, 0, 0)
   end
 end
 
@@ -106,8 +103,8 @@ function drawTerrainOld(terrain)
 end
 
 function drawTerrain(terrain, zoom, x, y)
-  for r = 0, 1 do
-    for c = 0, 1 do
+  for r = -5, 4 do
+    for c = -5, 4 do
       drawChunk(terrain:getChunk(r, c), zoom, x-32*c, y-32*r)
     end
   end
@@ -119,6 +116,7 @@ function drawChunk(chunk, zoom, x, y)
       if chunk.value[r][c] ~= air then
         if chunk.value[r][c] == stone then love.graphics.setColor(163, 163, 163, 255) end
         if chunk.value[r][c] == dirt then love.graphics.setColor(130, 97, 21, 255) end
+        if chunk.value[r][c] == coalOre then love.graphics.setColor(50, 50, 50, 255) end
         love.graphics.rectangle("fill", (c-1-x)*zoom + love.graphics.getWidth()/2, (r-1-y)*zoom+love.graphics.getHeight()/2, zoom, zoom)
       end
     end
@@ -126,8 +124,8 @@ function drawChunk(chunk, zoom, x, y)
 end
 
 function drawTerrainPerlin(terrain, zoom, x, y)
-  for r = 0, 1 do
-    for c = 0, 1 do
+  for r = -5, 4 do
+    for c = -5, 4 do
       drawChunkPerlin(terrain:getChunk(r, c), zoom, x-32*c, y-32*r)
     end
   end

@@ -1,8 +1,4 @@
 
-air = 0
-stone = 1
-dirt = 3
-
 Chunk = {}
 
 function Chunk:new()
@@ -12,11 +8,12 @@ function Chunk:new()
   
   o.generated = false
   o.value = {}
-    o.value = {}
-    o.perlin = {}
+  o.perlin = {}
+  o.coalNoise = {}
   for r = 1, 32 do
     o.value[r] = {}
     o.perlin[r] = {}
+    o.coalNoise[r] = {}
     for c = 1, 32 do
       o.value[r][c] = 0
       o.perlin[r][c] = 0
@@ -36,17 +33,20 @@ function Chunk:generate(seed, chunkR, chunkC)
   for r = 1, 32 do
     absR = chunkR * 32 + r
     self.value[r] = {}
-    dirtMargin = (256-absR) * 0.01
+    dirtMargin = (128 - absR) * 0.01
     for c = 1, 32 do
       absC = chunkC * 32 + c
       value = self.perlin[r][c]
-      if r < 128 then
-        value = value + (128 - r) * 0.02
+      if absR < 0 then
+        value = value - absR * 0.02
       end
+      
       if value > 0.5 then self.value[r][c] = air
       elseif value > 1.4 - dirtMargin or value < -0.6 then self.value[r][c] = dirt
       else self.value[r][c] = stone
       end
+      
+      if self.value[r][c] == stone and self.coalNoise[r][c] > 0.08 then self.value[r][c] = coalOre end
     end
   end
   self.generated = true
@@ -75,6 +75,7 @@ function Chunk:generatePerlin(seed, chunkR, chunkC)
         data[r][c] = data[r][c] + comp[r][c]
       end
     end
+    if i == 3 then self.coalNoise = comp end
   end
   return data
 end
