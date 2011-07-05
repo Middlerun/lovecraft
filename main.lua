@@ -37,13 +37,13 @@ end
 function love.update(dt)
   if not first and player.falling then
     player.vy = player.vy + 40 * dt
-    if     love.keyboard.isDown("a")  then player.vx = math.max(-8, player.vx - 8 * dt)
-    elseif love.keyboard.isDown("d") then player.vx = math.min(8, player.vx + 8 * dt)
+    if     love.keyboard.isDown("a") then player.vx = math.max(-8, player.vx - 8 * dt)
+    elseif love.keyboard.isDown("d") then player.vx = math.min( 8, player.vx + 8 * dt)
     end
   end
   if not first and not player.falling then
-    if     love.keyboard.isDown("a")  then player.vx = math.max(-8, player.vx - 64 * dt)
-    elseif love.keyboard.isDown("d") then player.vx = math.min(8, player.vx + 64 * dt)
+    if     love.keyboard.isDown("a") then player.vx = math.max(-8, player.vx - 48 * dt)
+    elseif love.keyboard.isDown("d") then player.vx = math.min( 8, player.vx + 48 * dt)
     elseif player.vx > 0 then player.vx = math.max(0, player.vx - 128 * dt)
     elseif player.vx < 0 then player.vx = math.min(0, player.vx + 128 * dt)
     end
@@ -51,32 +51,31 @@ function love.update(dt)
   player.x = player.x + player.vx * dt
   player.y = player.y + player.vy * dt
   
-  if terrain:getValue(math.ceil(player.y - player.height), math.ceil(player.x)) ~= air then
-    player.vy = 0
-    player.y = math.ceil(player.y - player.height) + player.height
-  end
-  
-  if player.x % 1 < player.width / 2 then
-    if   terrain:getValue(math.floor(player.y) - 1, math.floor(player.x)) ~= air
-    or   terrain:getValue(math.floor(player.y) + 0, math.floor(player.x)) ~= air then
-      player.vx = 0
-      player.x = math.floor(player.x) + 1.1 * player.width / 2
-    end
-  elseif player.x % 1 > 1 - player.width / 2 then
-    if   terrain:getValue(math.floor(player.y) - 1, math.floor(player.x) + 2) ~= air
-    or   terrain:getValue(math.floor(player.y) + 0, math.floor(player.x) + 2) ~= air then
-      player.vx = 0
-      player.x = math.floor(player.x) + 1 - 1.1 * player.width / 2
-    end
-  end
-  
-  if terrain:getValue(math.floor(player.y) + 1, math.floor(player.x - player.width / 2) + 1) == air
-   and terrain:getValue(math.floor(player.y) + 1, math.floor(player.x + player.width / 2) + 1) == air then
-    player.falling = true
+  if player.vy > math.abs(player.vx) then
+    hg = checkHitGround()
+    hw = checkHitWall()
+    hc = checkHitCeiling()
+    --print ("1")
+  elseif player.vy < -math.abs(player.vx) then
+    hc = checkHitCeiling()
+    hw = checkHitWall()
+    hg = checkHitGround()
+    --print ("2")
+  elseif player.vy > 0 then
+    hw = checkHitWall()
+    hg = checkHitGround()
+    hc = checkHitCeiling()
+    --print ("3")
   else
-    player.falling = false
-    player.vy = 0
-    player.y = math.floor(player.y)
+    hw = checkHitWall()
+    hc = checkHitCeiling()
+    hg = checkHitGround()
+    --print ("4")
+  end
+  
+  if love.keyboard.isDown("w") and not player.falling then
+    player.falling = true
+    player.vy = -16
   end
   
   --view.x = view.x + (player.x - view.x) * 0.2
@@ -88,6 +87,48 @@ function love.update(dt)
   cursor.x = (love.mouse.getX() - love.graphics.getWidth()  / 2) / view.zoom + view.x
   cursor.y = (love.mouse.getY() - love.graphics.getHeight() / 2) / view.zoom + view.y
   
+  
+end
+
+function checkHitCeiling()
+  if terrain:getValue(math.ceil(player.y - player.height), math.ceil(player.x)) ~= air then
+    player.vy = 0
+    player.y = math.ceil(player.y - player.height) + player.height
+    return true
+  end
+  return false
+end
+
+function checkHitWall()
+  if player.x % 1 < player.width / 2 then
+    if   terrain:getValue(math.ceil(player.y),     math.floor(player.x)) ~= air
+    or   terrain:getValue(math.ceil(player.y) - 1, math.floor(player.x)) ~= air then
+      player.vx = 0
+      player.x = math.floor(player.x) + 1.1 * player.width / 2
+      return true
+    end
+  elseif player.x % 1 > 1 - player.width / 2 then
+    if   terrain:getValue(math.ceil(player.y),     math.floor(player.x) + 2) ~= air
+    or   terrain:getValue(math.ceil(player.y) - 1, math.floor(player.x) + 2) ~= air then
+      player.vx = 0
+      player.x = math.floor(player.x) + 1 - 1.1 * player.width / 2
+      return true
+    end
+  end
+  return false
+end
+
+function checkHitGround()
+  if terrain:getValue(math.floor(player.y) + 1, math.floor(player.x - player.width / 2) + 1) == air
+   and terrain:getValue(math.floor(player.y) + 1, math.floor(player.x + player.width / 2) + 1) == air then
+    player.falling = true
+    return false
+  else
+    player.falling = false
+    player.vy = 0
+    player.y = math.floor(player.y)
+    return true
+  end
 end
 
 function love.draw()
@@ -105,10 +146,7 @@ end
 function love.keypressed(k, u)
   --if k == "r" then
     --terrain = makeTerrain()
-  if k == "w" and not player.falling then
-    player.falling = true
-    player.vy = -16
-  elseif k == "p" then
+  if k == "p" then
     showPerlin = not showPerlin
   elseif k == "escape" then
     love.event.push("q")
