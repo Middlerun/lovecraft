@@ -1,0 +1,52 @@
+          .      .  .                                    ,__   .   
+          /       ___  _   __   ___    ___  .___    ___  /  ` _/_  
+          |     .'   \ |   /  .'   ` .'   ` /   \  /   ` |__   |   
+          |     |    | `  /   |----' |      |   ' |    | |     |   
+          /---/  `._.'  \/    `.___,  `._.' /     `.__/| |     \__/
+                                                         /         
+
+A game by Middlerun
+http://www.middlerun.net
+
+A 2D Minecraft-style game.
+
+Controls:
+Movement:      WASD
+Break block:   Left mouse
+Place block:   Right mouse
+Select block:  Scroll wheel
+Jump:          Space
+
+
+Requires LÖVE 0.7.2. See http://www.love2d.org for more info.
+
+
+To do:
+------
+
+- Fix movement controls
+- Make game generate more terrain chunks as needed
+- More block types
+- Tools and items
+- Non-instant mining and placing of blocks
+- Crafting
+- Better graphics
+- Music and sound effects
+- Menu screen
+- Let player choose seed for level generation
+- Lighting
+- Day/night cycle
+
+
+Credits, attributions and other rubbish:
+----------------------------------------
+
+Made with the LÖVE framework
+http://www.love2d.org
+
+Inspired by Minecraft and Terraria.
+
+
+This game is released under Creative Commons Attribution-Noncommercial-
+Share Alike 3.0 Unported License
+http://creativecommons.org/licenses/by-nc-sa/3.0/
