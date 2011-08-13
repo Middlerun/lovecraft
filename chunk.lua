@@ -19,6 +19,8 @@ function Chunk:new()
       o.perlin[r][c] = 0
     end
   end
+  o.framebuffer = love.graphics.newFramebuffer(512, 512)
+  o.framebuffer:setFilter("linear", "nearest")
   
   return o
 end
@@ -50,6 +52,7 @@ function Chunk:generate(seed, chunkR, chunkC)
     end
   end
   self.generated = true
+  self:render()
 end
 
 function Chunk:generatePerlin(seed, chunkR, chunkC)
@@ -179,8 +182,22 @@ end
 
 function Chunk:setValue(r, c, value)
   self.value[r][c] = value
+  self:render()
 end
 
 function Chunk:isGenerated()
   return self.generated
+end
+
+function Chunk:render()
+  love.graphics.setRenderTarget(self.framebuffer)
+  love.graphics.setColor(255, 255, 255, 255)
+  for r = 1, 32 do
+    for c = 1, 32 do
+      if self.value[r][c] ~= air then
+        love.graphics.draw(images[self.value[r][c]], (c-1)*16, (r-1)*16)
+      end
+    end
+  end
+  love.graphics.setRenderTarget()
 end

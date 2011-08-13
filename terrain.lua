@@ -31,7 +31,9 @@ function Terrain:setValue(r, c, value)
   relC = (c - 1) % 32 + 1
   chunkR = (r - relR) / 32
   chunkC = (c - relC) / 32
-  self:getChunk(chunkR, chunkC):setValue(relR, relC, value)
+  if self:hasChunk(chunkR, chunkC) then
+    self:getChunk(chunkR, chunkC):setValue(relR, relC, value)
+  end
 end
 
 function Terrain:getValue(r, c)
@@ -39,7 +41,11 @@ function Terrain:getValue(r, c)
   relC = (c - 1) % 32 + 1
   chunkR = (r - relR) / 32
   chunkC = (c - relC) / 32
-  return self:getChunk(chunkR, chunkC):getValue(relR, relC)
+  if self:hasChunk(chunkR, chunkC) then
+    return self:getChunk(chunkR, chunkC):getValue(relR, relC)
+  else
+    return 0
+  end
 end
 
 function Terrain:getSeed()

@@ -12,9 +12,20 @@ rand = {mySeed = 1, lastN = -1}
 view = {zoom = 32, x = 0, y = 0}
 images = {}
 images[stone] = love.graphics.newImage("gfx/stone.png")
+images[stone]:setFilter("linear", "nearest")
 images[dirt] = love.graphics.newImage("gfx/dirt.png")
+images[dirt]:setFilter("linear", "nearest")
 images[coalOre] = love.graphics.newImage("gfx/coalOre.png")
+images[coalOre]:setFilter("linear", "nearest")
+
+genChunk = love.graphics.newImage("gfx/genChunk.png")
+genChunk:setFilter("linear", "nearest")
+oldMouse = {x = 0, y = 0}
 cursor = {x = 0, y = 0}
+cursorFade = false
+cursorAlpha = 255
+inreach = true
+selected = 1
 
 function love.load()
   showPerlin = false
@@ -29,12 +40,22 @@ function love.load()
       terrain:addChunk(chunk, r, c)
     end
   end
+  player.x = 0.5
+  player.y = -60
+  while terrain:getValue(math.floor(player.y), math.floor(player.x) + 1) == air do
+    player.y = player.y + 1
+  end
+  while terrain:getValue(math.floor(player.y), math.floor(player.x) + 1) ~= air do
+    player.y = player.y - 1
+  end
   
   first = true
   
 end
 
 function love.update(dt)
+  local oldx = player.x
+  local oldy = player.y
   if not first and player.falling then
     player.vy = player.vy + 40 * dt
     if     love.keyboard.isDown("a") then player.vx = math.max(-8, player.vx - 8 * dt)
@@ -51,17 +72,18 @@ function love.update(dt)
   player.x = player.x + player.vx * dt
   player.y = player.y + player.vy * dt
   
-  if player.vy > math.abs(player.vx) then
+  -- This stuff doesn't really work very well, try to fix at some point:
+  if player.y - oldy > math.abs(player.x - oldx) then
     hg = checkHitGround()
     hw = checkHitWall()
     hc = checkHitCeiling()
     --print ("1")
-  elseif player.vy < -math.abs(player.vx) then
+  elseif player.y - oldy < -math.abs(player.x - oldx) then
     hc = checkHitCeiling()
     hw = checkHitWall()
     hg = checkHitGround()
     --print ("2")
-  elseif player.vy > 0 then
+  elseif player.y - oldy > 0 then
     hw = checkHitWall()
     hg = checkHitGround()
     hc = checkHitCeiling()
@@ -78,15 +100,49 @@ function love.update(dt)
     player.vy = -16
   end
   
-  --view.x = view.x + (player.x - view.x) * 0.2
-  --view.y = view.y + (player.y - view.y) * 0.2
-  view.x = player.x
-  view.y = player.y + player.height / 2
+  view.x = view.x + (player.x - view.x) * 0.2
+  view.y = view.y + (player.y - player.height / 2 - view.y) * 0.2
+  local viewDist = pythag(view.x, view.y, player.x, player.y)
+  local maxViewDist = 0.35 * math.min(love.graphics.getWidth(), love.graphics.getHeight()) / view.zoom
+  if viewDist > maxViewDist then
+    view.x = player.x - (player.x - view.x) * (maxViewDist / viewDist)
+    view.y = player.y - (player.y - view.y) * (maxViewDist / viewDist)
+  end
+  --view.x = player.x
+  --view.y = player.y + player.height / 2
   first = false
   
   cursor.x = (love.mouse.getX() - love.graphics.getWidth()  / 2) / view.zoom + view.x
   cursor.y = (love.mouse.getY() - love.graphics.getHeight() / 2) / view.zoom + view.y
+  if love.keyboard.isDown("w") or love.keyboard.isDown("a") or love.keyboard.isDown("s") or love.keyboard.isDown("d") then
+    cursorFade = true
+  end
+  if love.mouse.getX() ~= oldMouse.x or love.mouse.getY() ~= oldMouse.y or love.mouse.isDown("l") or love.mouse.isDown("r") then
+    cursorFade = false
+    cursorAlpha = 255
+  end
+  if cursorFade then cursorAlpha = math.max(0, cursorAlpha - dt * 255 / 5) end
+  oldMouse.x = love.mouse.getX()
+  oldMouse.y = love.mouse.getY()
   
+  inreach = (pythag(cursor.x, cursor.y, player.x, player.y + player.height/2) < 5)
+  if inreach then
+    local block = terrain:getValue(math.ceil(cursor.y), math.ceil(cursor.x))
+    if love.mouse.isDown("l") and block ~= air then
+      player:give(block)
+      terrain:setValue(math.ceil(cursor.y), math.ceil(cursor.x), air)
+    elseif love.mouse.isDown("r") and block == air then
+    
+      -- This block is a temporary hack, change later
+      if selected == 1 then block = dirt
+      elseif selected == 2 then block = stone
+      elseif selected == 3 then block = coalOre
+      end
+      -- end hack
+      
+      if player:take(block) then terrain:setValue(math.ceil(cursor.y), math.ceil(cursor.x), block) end
+    end
+  end
   
 end
 
@@ -132,6 +188,7 @@ function checkHitGround()
 end
 
 function love.draw()
+  local x, y = love.mouse.getPosition()
   if showPerlin then drawTerrainPerlin(terrain, view.zoom, view.x, view.y)
   else
     love.graphics.setColor(161, 235, 255, 255)
@@ -140,7 +197,25 @@ function love.draw()
   end
   love.graphics.setColor(255, 255, 255, 255)
   love.graphics.draw(player.image, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/64, view.zoom/64, player.image:getWidth()/2, player.image:getHeight())
+  
+  -- Can't remember what this was for:
   --love.graphics.line((player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y-1.5)*view.zoom+love.graphics.getHeight()/2, (cursor.x-view.x)*view.zoom + love.graphics.getWidth()/2, (cursor.y-view.y)*view.zoom+love.graphics.getHeight()/2)
+  
+  love.graphics.setColor(0, 0, 0, cursorAlpha)
+  if inreach then
+    love.graphics.rectangle("line", (math.ceil(cursor.x)-1-view.x)*view.zoom + love.graphics.getWidth()/2, (math.ceil(cursor.y)-1-view.y)*view.zoom+love.graphics.getHeight()/2, view.zoom, view.zoom)
+  end
+  
+  love.graphics.setColor(0, 0, 0, 127)
+  if selected == 1 then love.graphics.setColor(0, 0, 0, 255) end
+  love.graphics.print("Dirt: " .. player:checkInventory(dirt), 50, 50)
+  love.graphics.setColor(0, 0, 0, 127)
+  if selected == 2 then love.graphics.setColor(0, 0, 0, 255) end
+  love.graphics.print("Stone: " .. player:checkInventory(stone), 50, 80)
+  love.graphics.setColor(0, 0, 0, 127)
+  if selected == 3 then love.graphics.setColor(0, 0, 0, 255) end
+  love.graphics.print("Coal ore: " .. player:checkInventory(coalOre), 50, 110)
+  
 end
 
 function love.keypressed(k, u)
@@ -150,11 +225,25 @@ function love.keypressed(k, u)
     showPerlin = not showPerlin
   elseif k == "escape" then
     love.event.push("q")
+  elseif k == "[" then
+    if view.zoom > 1 then view.zoom = view.zoom / 2 end
+  elseif k == "]" then
+    if view.zoom < 256 then view.zoom = view.zoom * 2 end
   end
 end
 
 function love.keyreleased(k)
 
+end
+
+function love.mousepressed(x, y, button)
+  if button == "wd" then
+    selected = selected + 1
+    if selected == 4 then selected = 1 end
+  elseif button == "wu" then
+    selected = selected - 1
+    if selected == 0 then selected = 3 end
+  end
 end
 
 function rand:get(seed, n)
@@ -175,32 +264,17 @@ function rand:get(seed, n)
 end
 
 function drawTerrain(terrain, zoom, x, y)
-  for r = -2, 1 do
-    for c = -2, 1 do
-      drawChunk(terrain:getChunk(r, c), zoom, x-32*c, y-32*r)
-    end
-  end
-end
-
-function drawChunkPlain(chunk, zoom, x, y)
-  for r = 1, 32 do
-    for c = 1, 32 do
-      if chunk.value[r][c] ~= air then
-        if chunk.value[r][c] == stone then love.graphics.setColor(163, 163, 163, 255) end
-        if chunk.value[r][c] == dirt then love.graphics.setColor(130, 97, 21, 255) end
-        if chunk.value[r][c] == coalOre then love.graphics.setColor(50, 50, 50, 255) end
-        love.graphics.rectangle("fill", (c-1-x)*zoom + love.graphics.getWidth()/2, (r-1-y)*zoom+love.graphics.getHeight()/2, zoom, zoom)
-      end
-    end
-  end
-end
-
-function drawChunk(chunk, zoom, x, y)
-  for r = 1, 32 do
-    for c = 1, 32 do
-      if chunk.value[r][c] ~= air then
-        love.graphics.setColor(255, 255, 255, 255)
-        love.graphics.draw(images[chunk.value[r][c]], (c-1-x)*zoom + love.graphics.getWidth()/2, (r-1-y)*zoom+love.graphics.getHeight()/2, 0, zoom/16, zoom/16)
+  local minR = math.max(-2, math.floor((y - zoom * (love.graphics.getHeight() / 2)) / 32))
+  local maxR = math.min(1,  math.floor((y + zoom * (love.graphics.getHeight() / 2)) / 32))
+  local minC = math.max(-2, math.floor((x - zoom * (love.graphics.getWidth()  / 2)) / 32))
+  local maxC = math.min(1,  math.floor((x + zoom * (love.graphics.getWidth()  / 2)) / 32))
+  love.graphics.setColor(255, 255, 255, 255)
+  for r = minR, maxR do
+    for c = minC, maxC do
+      if terrain:hasChunk(r, c) then
+        love.graphics.draw(terrain:getChunk(r, c).framebuffer, (32*c-x)*zoom + love.graphics.getWidth()/2, (32*r-y)*zoom+love.graphics.getHeight()/2, 0, zoom/16, zoom/16)
+      else
+        love.graphics.draw(genChunk, (x-32*c)*zoom + love.graphics.getWidth()/2, (y-32*r)*zoom+love.graphics.getHeight()/2, 0, zoom/8, zoom/8)
       end
     end
   end
@@ -209,7 +283,9 @@ end
 function drawTerrainPerlin(terrain, zoom, x, y)
   for r = -2, 1 do
     for c = -2, 1 do
-      drawChunkPerlin(terrain:getChunk(r, c), zoom, x-32*c, y-32*r)
+      if terrain:hasChunk(r, c) then
+        drawChunkPerlin(terrain:getChunk(r, c), zoom, x-32*c, y-32*r)
+      end
     end
   end
 end
@@ -223,5 +299,7 @@ function drawChunkPerlin(chunk, zoom, x, y)
   end
 end
 
-
+function pythag(x1, y1, x2, y2)
+  return math.sqrt((x1-x2)^2 + (y1-y2)^2)
+end
 
