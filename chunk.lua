@@ -7,20 +7,22 @@ function Chunk:new()
   self.__index = self
   
   o.generated = false
-  o.value = {}
+  o.block = {}
   o.perlin = {}
   o.coalNoise = {}
   for r = 1, 32 do
-    o.value[r] = {}
+    o.block[r] = {}
     o.perlin[r] = {}
     o.coalNoise[r] = {}
     for c = 1, 32 do
-      o.value[r][c] = 0
+      o.block[r][c] = 0
       o.perlin[r][c] = 0
     end
   end
   o.framebuffer = love.graphics.newFramebuffer(512, 512)
   o.framebuffer:setFilter("linear", "nearest")
+  o.framebufferPerlin = love.graphics.newFramebuffer(512, 512)
+  o.framebufferPerlin:setFilter("linear", "nearest")
   
   return o
 end
@@ -31,10 +33,10 @@ function Chunk:generate(seed, chunkR, chunkC)
   local absR
   local absC
   
-  self.value = {}
+  self.block = {}
   for r = 1, 32 do
     absR = chunkR * 32 + r
-    self.value[r] = {}
+    self.block[r] = {}
     dirtMargin = (128 - absR) * 0.01
     for c = 1, 32 do
       absC = chunkC * 32 + c
@@ -43,16 +45,17 @@ function Chunk:generate(seed, chunkR, chunkC)
         value = value - absR * 0.02
       end
       
-      if value > 0.5 then self.value[r][c] = air
-      elseif value > 1.4 - dirtMargin or value < -0.6 then self.value[r][c] = dirt
-      else self.value[r][c] = stone
+      if value > 0.5 then self.block[r][c] = air
+      elseif value > 1.4 - dirtMargin or value < -0.6 then self.block[r][c] = dirt
+      else self.block[r][c] = stone
       end
       
-      if self.value[r][c] == stone and self.coalNoise[r][c] > 0.08 then self.value[r][c] = coalOre end
+      if self.block[r][c] == stone and self.coalNoise[r][c] > 0.08 then self.block[r][c] = coalOre end
     end
   end
   self.generated = true
   self:render()
+  self:renderPerlin()
 end
 
 function Chunk:generatePerlin(seed, chunkR, chunkC)
@@ -176,12 +179,12 @@ function Chunk:interpolate2D(values, chunkR, chunkC, N)
   return newData2
 end
 
-function Chunk:getValue(r, c)
-  return self.value[r][c]
+function Chunk:getBlock(r, c)
+  return self.block[r][c]
 end
 
-function Chunk:setValue(r, c, value)
-  self.value[r][c] = value
+function Chunk:setBlock(r, c, block)
+  self.block[r][c] = block
   self:render()
 end
 
@@ -194,8 +197,22 @@ function Chunk:render()
   love.graphics.setColor(255, 255, 255, 255)
   for r = 1, 32 do
     for c = 1, 32 do
-      if self.value[r][c] ~= air then
-        love.graphics.draw(images[self.value[r][c]], (c-1)*16, (r-1)*16)
+      if self.block[r][c] ~= air then
+        love.graphics.draw(images[self.block[r][c]], (c-1)*16, (r-1)*16)
+      end
+    end
+  end
+  love.graphics.setRenderTarget()
+end
+
+function Chunk:renderPerlin()
+  love.graphics.setRenderTarget(self.framebufferPerlin)
+  love.graphics.setColor(255, 255, 255, 255)
+  for r = 1, 32 do
+    for c = 1, 32 do
+      if self.block[r][c] ~= air then
+        love.graphics.setColor(128 + 80 * self.perlin[r][c], 128 + 80 * self.perlin[r][c], 128 + 80 * self.perlin[r][c], 255)
+        love.graphics.rectangle("fill", (c-1)*16, (r-1)*16, 16, 16)
       end
     end
   end

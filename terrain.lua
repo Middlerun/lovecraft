@@ -26,23 +26,23 @@ function Terrain:hasChunk(r, c)
   return self.chunk[r] ~= nil and self.chunk[r][c] ~= nil
 end
 
-function Terrain:setValue(r, c, value)
+function Terrain:setBlock(r, c, block)
   relR = (r - 1) % 32 + 1
   relC = (c - 1) % 32 + 1
   chunkR = (r - relR) / 32
   chunkC = (c - relC) / 32
   if self:hasChunk(chunkR, chunkC) then
-    self:getChunk(chunkR, chunkC):setValue(relR, relC, value)
+    self:getChunk(chunkR, chunkC):setBlock(relR, relC, block)
   end
 end
 
-function Terrain:getValue(r, c)
+function Terrain:getBlock(r, c)
   relR = (r - 1) % 32 + 1
   relC = (c - 1) % 32 + 1
   chunkR = (r - relR) / 32
   chunkC = (c - relC) / 32
   if self:hasChunk(chunkR, chunkC) then
-    return self:getChunk(chunkR, chunkC):getValue(relR, relC)
+    return self:getChunk(chunkR, chunkC):getBlock(relR, relC)
   else
     return 0
   end

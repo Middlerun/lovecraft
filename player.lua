@@ -10,11 +10,15 @@ function Player:new(seed)
   o.height = 1.8
   o.width = 0.8
   o.falling = true
+  o.againstRightWall = false
+  o.againstLeftWall = false
   o.vx = 0
   o.vy = 0
   o.image = love.graphics.newImage("gfx/happyman.png")
   o.image:setFilter("linear", "nearest")
   o.inventory = {}
+  o.oldX = o.x
+  o.oldY = o.y
   
   return o
 end
