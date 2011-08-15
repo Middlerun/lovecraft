@@ -24,7 +24,6 @@ Requires LÖVE 0.7.2. See http://www.love2d.org for more info.
 To do:
 ------
 
-- Make game generate more terrain chunks as needed
 - More block types, trees, water
 - Tools and items
 - Crafting
@@ -44,6 +43,12 @@ Made with the LÖVE framework
 http://www.love2d.org
 
 Inspired by Minecraft and Terraria.
+
+Assets used under Creative Commons license:
+Cobblestone graphics by Arachne
+(http://forums.tigsource.com/index.php?topic=9147.0)
+Rabbit graphics by hammedhaaret
+(http://forums.tigsource.com/index.php?topic=9276.0)
 
 
 This game is released under Creative Commons Attribution-Noncommercial-
