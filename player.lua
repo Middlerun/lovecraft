@@ -8,14 +8,23 @@ function Player:new(seed)
   o.x = 0.5
   o.y = -40
   o.height = 1.8
-  o.width = 0.8
+  o.width = 0.7
   o.falling = true
   o.againstRightWall = false
   o.againstLeftWall = false
   o.vx = 0
   o.vy = 0
-  o.image = love.graphics.newImage("gfx/rabbitStand.png")
-  o.image:setFilter("linear", "nearest")
+  o.stand = love.graphics.newImage("gfx/rabbitStand.png")
+  o.stand:setFilter("linear", "nearest")
+  o.jump1 = love.graphics.newImage("gfx/rabbitJump1.png")
+  o.jump1:setFilter("linear", "nearest")
+  o.jump2 = love.graphics.newImage("gfx/rabbitJump2.png")
+  o.jump2:setFilter("linear", "nearest")
+  o.land = love.graphics.newImage("gfx/rabbitLand.png")
+  o.land:setFilter("linear", "nearest")
+  o.walk = newAnimation(love.graphics.newImage("gfx/rabbitWalk.png"), 64, 128, 0.05, 11)
+  o.walk:play()
+  o.walking = false
   o.inventory = {}
   o.oldX = o.x
   o.oldY = o.y

@@ -5,6 +5,7 @@ love.filesystem.load("player.lua")()
 love.filesystem.load("collision.lua")()
 love.filesystem.load("common.lua")()
 love.filesystem.load("loadgraphics.lua")()
+love.filesystem.load("AnAL.lua")()
 love.filesystem.setIdentity("lovecraft")
 
 view = {zoom = 32, x = 0, y = 0}
@@ -18,6 +19,7 @@ selected = 1
 mineBlock = {r = nil, c = nil}
 mineProgress = 0
 placeTime = 0
+landTime = 0
 entities = {}
 
 
@@ -53,24 +55,35 @@ function love.update(dt)
     if     love.keyboard.isDown("a") and not player.againstLeftWall  then
       player.vx = math.max(-8, player.vx - 16 * dt)
       player.direction = -1
+      landTime = 0
     elseif love.keyboard.isDown("d") and not player.againstRightWall then
       player.vx = math.min( 8, player.vx + 16 * dt)
       player.direction = 1
+      landTime = 0
     end
   end
   if not first and not player.falling then
     if     love.keyboard.isDown("a") and not player.againstLeftWall  then
       player.vx = math.max(-8, player.vx - 36 * dt)
       player.direction = -1
+      landTime = 0
     elseif love.keyboard.isDown("d") and not player.againstRightWall then
       player.vx = math.min( 8, player.vx + 36 * dt)
       player.direction = 1
+      landTime = 0
     elseif player.vx > 0 then player.vx = math.max(0, player.vx - 128 * dt)
     elseif player.vx < 0 then player.vx = math.min(0, player.vx + 128 * dt)
     end
   end
   player.x = player.x + player.vx * dt
   player.y = player.y + player.vy * dt
+  
+  if not player.falling and math.abs(player.vx) > 0.5 and (love.keyboard.isDown("a") or love.keyboard.isDown("d")) then
+    if not player.walking then player.walk:seek(5) end
+    player.walking = true
+  else
+    player.walking = false
+  end
   
   checkCollisions(terrain, player)
   
@@ -148,6 +161,8 @@ function love.update(dt)
   end
   
   placeTime = placeTime + dt
+  landTime = landTime - dt
+  player.walk:update(dt)
   
   -- Generate new chunks
   for r = math.floor((player.y - 48) / 32), math.floor((player.y + 48) / 32) do
@@ -169,7 +184,17 @@ function love.draw()
     drawTerrain(terrain, view.zoom, view.x, view.y)
   end
   love.graphics.setColor(255, 255, 255, 255)
-  love.graphics.draw(player.image, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
+  if player.walking then
+    player.walk:draw((player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
+  elseif player.falling and player.vy < 0 then
+    love.graphics.draw(player.jump1, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
+  elseif player.falling then
+    love.graphics.draw(player.jump2, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
+  elseif landTime > 0 then
+    love.graphics.draw(player.land, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
+  else
+    love.graphics.draw(player.stand, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
+  end
   
   -- Can't remember what this was for:
   --love.graphics.line((player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y-1.5)*view.zoom+love.graphics.getHeight()/2, (cursor.x-view.x)*view.zoom + love.graphics.getWidth()/2, (cursor.y-view.y)*view.zoom+love.graphics.getHeight()/2)
@@ -224,10 +249,10 @@ end
 function love.mousepressed(x, y, button)
   if button == "wd" then
     selected = selected + 1
-    if selected == 4 then selected = 1 end
+    if selected == 5 then selected = 1 end
   elseif button == "wu" then
     selected = selected - 1
-    if selected == 0 then selected = 3 end
+    if selected == 0 then selected = 4 end
   end
 end
 

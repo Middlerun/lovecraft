@@ -82,6 +82,8 @@ function checkCollisions(terrain, player)
   elseif hit == ceiling then
     player.vy = 0
   elseif hit == ground then
+    landTime = 0.01 * player.vy
+    if landTime < 0.1 then landTime = 0 end
     player.vy = 0
     player.y = math.ceil(player.y - 0.5)
     player.falling = false
