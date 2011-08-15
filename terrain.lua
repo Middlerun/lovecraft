@@ -94,6 +94,7 @@ function Terrain:checkGenerator()
       end
     end
     chunk:render()
+    chunk:renderPerlin()
   end
   if generator:peek("ready") then
     local chunkRC = table.remove(self.generationQueue, 1)

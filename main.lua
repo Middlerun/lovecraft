@@ -43,9 +43,9 @@ selected = 1
 mineBlock = {r = nil, c = nil}
 mineProgress = 0
 durability = {}
-durability[DIRT] = 0
-durability[STONE] = 0
-durability[COAL_ORE] = 0
+durability[DIRT] = 1
+durability[STONE] = 2
+durability[COAL_ORE] = 3
 placeTime = 0
 
 
