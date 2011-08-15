@@ -14,11 +14,12 @@ function Player:new(seed)
   o.againstLeftWall = false
   o.vx = 0
   o.vy = 0
-  o.image = love.graphics.newImage("gfx/happyman.png")
+  o.image = love.graphics.newImage("gfx/rabbitStand.png")
   o.image:setFilter("linear", "nearest")
   o.inventory = {}
   o.oldX = o.x
   o.oldY = o.y
+  o.direction = 1
   
   return o
 end

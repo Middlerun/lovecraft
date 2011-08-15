@@ -3,37 +3,12 @@ love.filesystem.load("chunk.lua")()
 love.filesystem.load("terrain.lua")()
 love.filesystem.load("player.lua")()
 love.filesystem.load("collision.lua")()
+love.filesystem.load("common.lua")()
+love.filesystem.load("loadgraphics.lua")()
 love.filesystem.setIdentity("lovecraft")
 
--- Modes
-MENU = 1
-GENERATING = 2
-PLAY = 3
-
--- Block codes
-AIR = 0
-STONE = 1
-DIRT = 3
-COAL_ORE = 16
-UNGENERATED = 255
-
-images = {}
-images[STONE] = love.graphics.newImage("gfx/stone.png")
-images[STONE]:setFilter("linear", "nearest")
-images[DIRT] = love.graphics.newImage("gfx/dirt.png")
-images[DIRT]:setFilter("linear", "nearest")
-images[COAL_ORE] = love.graphics.newImage("gfx/coalOre.png")
-images[COAL_ORE]:setFilter("linear", "nearest")
-breakImage = {}
-for i = 1, 8 do
-  breakImage[i] = love.graphics.newImage("gfx/break" .. i .. ".png")
-  breakImage[i]:setFilter("linear", "nearest")
-end
-genChunk = love.graphics.newImage("gfx/genChunk.png")
-genChunk:setFilter("linear", "nearest")
-
-rand = {mySeed = 1, lastN = -1}
 view = {zoom = 32, x = 0, y = 0}
+showPerlin = false
 oldMouse = {x = 0, y = 0}
 cursor = {x = 0, y = 0}
 cursorFade = false
@@ -42,21 +17,16 @@ inreach = true
 selected = 1
 mineBlock = {r = nil, c = nil}
 mineProgress = 0
-durability = {}
-durability[DIRT] = 1
-durability[STONE] = 2
-durability[COAL_ORE] = 3
 placeTime = 0
+entities = {}
 
 
 
 function love.load()
   generator = love.thread.newThread("generator", "generator.lua")
   generator:start()
-  showPerlin = false
   
   player = Player:new()
-  
   terrain = Terrain:new()
   terrain:generateInitial()
   player.x = 0.5
@@ -80,13 +50,21 @@ function love.update(dt)
   local oldy = player.y
   if not first and player.falling then
     player.vy = player.vy + 40 * dt
-    if     love.keyboard.isDown("a") and not player.againstLeftWall  then player.vx = math.max(-8, player.vx - 16 * dt)
-    elseif love.keyboard.isDown("d") and not player.againstRightWall then player.vx = math.min( 8, player.vx + 16 * dt)
+    if     love.keyboard.isDown("a") and not player.againstLeftWall  then
+      player.vx = math.max(-8, player.vx - 16 * dt)
+      player.direction = -1
+    elseif love.keyboard.isDown("d") and not player.againstRightWall then
+      player.vx = math.min( 8, player.vx + 16 * dt)
+      player.direction = 1
     end
   end
   if not first and not player.falling then
-    if     love.keyboard.isDown("a") and not player.againstLeftWall  then player.vx = math.max(-8, player.vx - 36 * dt)
-    elseif love.keyboard.isDown("d") and not player.againstRightWall then player.vx = math.min( 8, player.vx + 36 * dt)
+    if     love.keyboard.isDown("a") and not player.againstLeftWall  then
+      player.vx = math.max(-8, player.vx - 36 * dt)
+      player.direction = -1
+    elseif love.keyboard.isDown("d") and not player.againstRightWall then
+      player.vx = math.min( 8, player.vx + 36 * dt)
+      player.direction = 1
     elseif player.vx > 0 then player.vx = math.max(0, player.vx - 128 * dt)
     elseif player.vx < 0 then player.vx = math.min(0, player.vx + 128 * dt)
     end
@@ -133,7 +111,7 @@ function love.update(dt)
       if math.ceil(cursor.x) == mineBlock.c and math.ceil(cursor.y) == mineBlock.r then
         mineProgress = mineProgress + dt / durability[block]
         if mineProgress >= 1 then
-          player:give(block)
+          player:give(breakGive[block])
           terrain:setBlock(math.ceil(cursor.y), math.ceil(cursor.x), AIR)
           mineProgress = 0
           mineBlock.r = nil
@@ -149,7 +127,8 @@ function love.update(dt)
       -- Temporary hack, change later
       if selected == 1 then block = DIRT
       elseif selected == 2 then block = STONE
-      elseif selected == 3 then block = COAL_ORE
+      elseif selected == 3 then block = COBBLESTONE
+      elseif selected == 4 then block = COAL_ORE
       end
       -- end hack
       
@@ -190,7 +169,7 @@ function love.draw()
     drawTerrain(terrain, view.zoom, view.x, view.y)
   end
   love.graphics.setColor(255, 255, 255, 255)
-  love.graphics.draw(player.image, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/64, view.zoom/64, player.image:getWidth()/2, player.image:getHeight())
+  love.graphics.draw(player.image, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
   
   -- Can't remember what this was for:
   --love.graphics.line((player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y-1.5)*view.zoom+love.graphics.getHeight()/2, (cursor.x-view.x)*view.zoom + love.graphics.getWidth()/2, (cursor.y-view.y)*view.zoom+love.graphics.getHeight()/2)
@@ -212,7 +191,10 @@ function love.draw()
   love.graphics.print("Stone: " .. player:checkInventory(STONE), 50, 80)
   love.graphics.setColor(0, 0, 0, 127)
   if selected == 3 then love.graphics.setColor(0, 0, 0, 255) end
-  love.graphics.print("Coal ore: " .. player:checkInventory(COAL_ORE), 50, 110)
+  love.graphics.print("Cobblestone: " .. player:checkInventory(COBBLESTONE), 50, 110)
+  love.graphics.setColor(0, 0, 0, 127)
+  if selected == 4 then love.graphics.setColor(0, 0, 0, 255) end
+  love.graphics.print("Coal ore: " .. player:checkInventory(COAL_ORE), 50, 140)
 end
 
 
@@ -247,25 +229,6 @@ function love.mousepressed(x, y, button)
     selected = selected - 1
     if selected == 0 then selected = 3 end
   end
-end
-
-
-
-function rand:get(seed, n)
-  if n <= 0 then n = -2 * n
-  else n = 2 * n - 1
-  end
-  
-  if seed ~= self.mySeed or self.lastN < 0 or n <= self.lastN then
-    self.mySeed = seed
-    math.randomseed(seed)
-    self.lastN = -1
-  end
-  while self.lastN < n do
-    num = math.random()
-    self.lastN = self.lastN + 1
-  end
-  return num - 0.5
 end
 
 

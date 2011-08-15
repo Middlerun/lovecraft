@@ -177,6 +177,7 @@ function Chunk:interpolate2D(values, chunkR, chunkC, N)
 end
 
 function Chunk:getBlock(r, c)
+  if r < 1 or r > 32 or c < 1 or c > 32 then return AIR end
   return self.block[r][c]
 end
 
@@ -190,16 +191,23 @@ function Chunk:isGenerated()
 end
 
 function Chunk:render()
+  --if not self.generated then return end
   if self.framebuffer == nil then
     self.framebuffer = love.graphics.newFramebuffer(512, 512)
     self.framebuffer:setFilter("linear", "nearest")
   end
   love.graphics.setRenderTarget(self.framebuffer)
   love.graphics.setColor(255, 255, 255, 255)
+  local num
   for r = 1, 32 do
     for c = 1, 32 do
       if self.block[r][c] ~= AIR and self.block[r][c] ~= UNGENERATED then
-        love.graphics.draw(images[self.block[r][c]], (c-1)*16, (r-1)*16)
+        num = 1
+        if self:getBlock(r-1, c) == self.block[r][c] then num = num + 1 end
+        if self:getBlock(r, c+1) == self.block[r][c] then num = num + 2 end
+        if self:getBlock(r+1, c) == self.block[r][c] then num = num + 4 end
+        if self:getBlock(r, c-1) == self.block[r][c] then num = num + 8 end
+        love.graphics.draw(images[self.block[r][c]][num], (c-1)*16, (r-1)*16)
       end
     end
   end
@@ -207,6 +215,7 @@ function Chunk:render()
 end
 
 function Chunk:renderPerlin()
+  --if not self.generated then return end
   if self.framebufferPerlin == nil then
     self.framebufferPerlin = love.graphics.newFramebuffer(512, 512)
     self.framebufferPerlin:setFilter("linear", "nearest")
