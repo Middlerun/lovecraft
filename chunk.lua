@@ -6,8 +6,10 @@ function Chunk:new()
   self.__index = self
   
   o.generated = false
+  o.treesGenerated = false
   o.r = nil
   o.c = nil
+  o.terrain = nil
   o.block = {}
   o.perlin = {}
   o.coalNoise = {}
@@ -16,7 +18,7 @@ function Chunk:new()
     o.perlin[r] = {}
     o.coalNoise[r] = {}
     for c = 1, 32 do
-      o.block[r][c] = 255
+      o.block[r][c] = UNGENERATED
       o.perlin[r][c] = 0
     end
   end
@@ -177,13 +179,26 @@ function Chunk:interpolate2D(values, chunkR, chunkC, N)
 end
 
 function Chunk:getBlock(r, c)
-  if r < 1 or r > 32 or c < 1 or c > 32 then return AIR end
+  if not self.generated then return UNGENERATED end
+  if r < 1 or r > 32 or c < 1 or c > 32 then
+    return self.terrain:getBlock(self.r * 32 + r, self.c * 32 + c)
+  end
   return self.block[r][c]
 end
 
 function Chunk:setBlock(r, c, block)
+  if not self.generated then return end
+  if r < 1 or r > 32 or c < 1 or c > 32 then
+    self.terrain:setBlock(self.r * 32 + r, self.c * 32 + c, block)
+    return
+  elseif block ~= AIR and self:getBlock(r+1, c) == GRASS then self:setBlock(r+1, c, DIRT)
+  end
   self.block[r][c] = block
   self:render()
+  if r == 1  and self.terrain:hasChunk(self.r-1, self.c) then self.terrain:getChunk(self.r-1, self.c):render() end
+  if r == 32 and self.terrain:hasChunk(self.r+1, self.c) then self.terrain:getChunk(self.r+1, self.c):render() end
+  if c == 1  and self.terrain:hasChunk(self.r, self.c-1) then self.terrain:getChunk(self.r, self.c-1):render() end
+  if c == 32 and self.terrain:hasChunk(self.r, self.c+1) then self.terrain:getChunk(self.r, self.c+1):render() end
 end
 
 function Chunk:isGenerated()
@@ -191,11 +206,11 @@ function Chunk:isGenerated()
 end
 
 function Chunk:render()
-  --if not self.generated then return end
   if self.framebuffer == nil then
     self.framebuffer = love.graphics.newFramebuffer(512, 512)
     self.framebuffer:setFilter("linear", "nearest")
   end
+  if not self.generated then return end
   love.graphics.setRenderTarget(self.framebuffer)
   love.graphics.setColor(255, 255, 255, 255)
   local num
@@ -215,11 +230,11 @@ function Chunk:render()
 end
 
 function Chunk:renderPerlin()
-  --if not self.generated then return end
   if self.framebufferPerlin == nil then
     self.framebufferPerlin = love.graphics.newFramebuffer(512, 512)
     self.framebufferPerlin:setFilter("linear", "nearest")
   end
+  if not self.generated then return end
   love.graphics.setRenderTarget(self.framebufferPerlin)
   love.graphics.setColor(255, 255, 255, 255)
   for r = 1, 32 do
@@ -231,4 +246,53 @@ function Chunk:renderPerlin()
     end
   end
   love.graphics.setRenderTarget()
+end
+
+function Chunk:generateTrees()
+  if self.treesGenerated then return end
+  local canGenerate = true
+  for r = -1, 0 do
+    for c = -1, 1 do
+      if not self.terrain:hasChunk(self.r + r, self.c + c) or not self.terrain:getChunk(self.r + r, self.c + c).generated then
+        canGenerate = false
+      end
+    end
+  end
+  if canGenerate then
+    local canPlantTree
+    local height, maxHeight
+    local radius
+    math.randomseed(self.terrain:getSeed() + 13669 * self.r + self.c)
+    for r = 1, 32 do
+      for c = 1, 32 do
+        if self:getBlock(r, c) == DIRT then
+          if self:getBlock(r-1, c) == AIR or self:getBlock(r-1, c) == LEAVES then
+            if self.r * 32 + r < math.random() * 32 then self:setBlock(r, c, GRASS) end
+          end
+          if math.random() < 0.1 then
+            canPlantTree = true
+            for i = 1, 5 do
+              if self:getBlock(r-i, c) ~= AIR and self:getBlock(r-i, c) ~= LEAVES then canPlantTree = false end
+            end
+            if canPlantTree then
+              -- Plant tree
+              maxHeight = 5 + math.floor(6 * math.random())
+              for i = 1, maxHeight do
+                if self:getBlock(r-i-1, c) ~= AIR and self:getBlock(r-i-1, c) ~= LEAVES then break end
+                self:setBlock(r-i, c, WOOD)
+                height = i
+              end
+              radius = math.floor(height/3) + 1
+              for r2 = -radius, radius do
+                for c2 = -radius, radius do
+                  if pythag(r2, c2) <= radius + 0.5 and self:getBlock(r-height+r2, c+c2) == AIR then self:setBlock(r-height+r2, c+c2, LEAVES) end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+    self.treesGenerated = true
+  end
 end

@@ -25,6 +25,9 @@ function Terrain:addChunk(chunk, r, c)
   if c > self.cMax then self.cMax = c end
   if self.chunk[r] == nil then self.chunk[r] = {} end
   self.chunk[r][c] = chunk
+  self.chunk[r][c].terrain = self
+  self.chunk[r][c].r = r
+  self.chunk[r][c].c = c
 end
 
 function Terrain:getChunk(r, c)
@@ -55,7 +58,7 @@ function Terrain:getBlock(r, c)
   if self:hasChunk(chunkR, chunkC) then
     return self:getChunk(chunkR, chunkC):getBlock(relR, relC)
   else
-    return 255
+    return UNGENERATED
   end
 end
 
@@ -69,6 +72,13 @@ function Terrain:generateInitial()
       chunk = Chunk:new()
       chunk:generate(self:getSeed(), r, c)
       terrain:addChunk(chunk, r, c)
+      for r = 0, 1 do
+        for c = -1, 1 do
+          if self:hasChunk(chunk.r + r, chunk.c + c) then
+            self:getChunk(chunk.r + r, chunk.c + c):generateTrees()
+         end
+        end
+      end
     end
   end
 end
@@ -93,8 +103,16 @@ function Terrain:checkGenerator()
         chunk.coalNoise[r][c] = chunkNew.coalNoise[r][c]
       end
     end
+    chunk.generated = true
     chunk:render()
     chunk:renderPerlin()
+    for r = 0, 1 do
+      for c = -1, 1 do
+        if self:hasChunk(chunk.r + r, chunk.c + c) then
+          self:getChunk(chunk.r + r, chunk.c + c):generateTrees()
+        end
+      end
+    end
   end
   if generator:peek("ready") then
     local chunkRC = table.remove(self.generationQueue, 1)

@@ -6,22 +6,31 @@ PLAY = 3
 -- Block codes
 AIR = 0
 STONE = 1
+GRASS = 2
 DIRT = 3
 COBBLESTONE = 4
 COAL_ORE = 16
+WOOD = 17
+LEAVES = 18
 UNGENERATED = 255
 
 durability = {}
 durability[STONE] = 2
+durability[GRASS] = 1
 durability[DIRT] = 1
 durability[COBBLESTONE] = 2
 durability[COAL_ORE] = 3
+durability[WOOD] = 1.5
+durability[LEAVES] = 0.3
 
 breakGive = {}
 breakGive[STONE] = COBBLESTONE
+breakGive[GRASS] = DIRT
 breakGive[DIRT] = DIRT
 breakGive[COBBLESTONE] = COBBLESTONE
 breakGive[COAL_ORE] = COAL_ORE
+breakGive[WOOD] = WOOD
+breakGive[LEAVES] = nil
 
 -- Random number engine
 rand = {mySeed = 1, lastN = -1}

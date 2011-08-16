@@ -21,6 +21,8 @@ mineProgress = 0
 placeTime = 0
 landTime = 0
 entities = {}
+instamine = false
+debug = false
 
 
 
@@ -48,6 +50,7 @@ end
 
 
 function love.update(dt)
+  if dt > 0.2 then dt = 0.2 end
   local oldx = player.x
   local oldy = player.y
   if not first and player.falling then
@@ -123,7 +126,7 @@ function love.update(dt)
     if love.mouse.isDown("l") and block ~= AIR and block ~= UNGENERATED then
       if math.ceil(cursor.x) == mineBlock.c and math.ceil(cursor.y) == mineBlock.r then
         mineProgress = mineProgress + dt / durability[block]
-        if mineProgress >= 1 then
+        if mineProgress >= 1 or instamine then
           player:give(breakGive[block])
           terrain:setBlock(math.ceil(cursor.y), math.ceil(cursor.x), AIR)
           mineProgress = 0
@@ -142,6 +145,7 @@ function love.update(dt)
       elseif selected == 2 then block = STONE
       elseif selected == 3 then block = COBBLESTONE
       elseif selected == 4 then block = COAL_ORE
+      elseif selected == 5 then block = WOOD
       end
       -- end hack
       
@@ -165,8 +169,8 @@ function love.update(dt)
   player.walk:update(dt)
   
   -- Generate new chunks
-  for r = math.floor((player.y - 48) / 32), math.floor((player.y + 48) / 32) do
-    for c = math.floor((player.x - 48) / 32), math.floor((player.x + 48) / 32) do
+  for r = math.floor((player.y - 80) / 32), math.floor((player.y + 80) / 32) do
+    for c = math.floor((player.x - 80) / 32), math.floor((player.x + 80) / 32) do
       terrain:generate(r, c)
     end
   end
@@ -220,6 +224,14 @@ function love.draw()
   love.graphics.setColor(0, 0, 0, 127)
   if selected == 4 then love.graphics.setColor(0, 0, 0, 255) end
   love.graphics.print("Coal ore: " .. player:checkInventory(COAL_ORE), 50, 140)
+  love.graphics.setColor(0, 0, 0, 127)
+  if selected == 5 then love.graphics.setColor(0, 0, 0, 255) end
+  love.graphics.print("Wood: " .. player:checkInventory(WOOD), 50, 170)
+  
+  if debug then
+    love.graphics.setColor(0, 0, 0, 255)
+    love.graphics.print(love.timer.getFPS() .. " fps", love.graphics.getWidth() - 150, 50)
+  end
 end
 
 
@@ -235,6 +247,8 @@ function love.keypressed(k, u)
     if view.zoom > 1 then view.zoom = view.zoom / 2 end
   elseif k == "]" then
     if view.zoom < 256 then view.zoom = view.zoom * 2 end
+  elseif k == "f3" then
+    debug = not debug
   end
 end
 
@@ -249,10 +263,10 @@ end
 function love.mousepressed(x, y, button)
   if button == "wd" then
     selected = selected + 1
-    if selected == 5 then selected = 1 end
+    if selected == 6 then selected = 1 end
   elseif button == "wu" then
     selected = selected - 1
-    if selected == 0 then selected = 4 end
+    if selected == 0 then selected = 5 end
   end
 end
 
@@ -295,6 +309,10 @@ end
 
 
 function pythag(x1, y1, x2, y2)
+  if x2 == nil and y2 == nil then
+    x2 = 0
+    y2 = 0
+  end
   return math.sqrt((x1-x2)^2 + (y1-y2)^2)
 end
 

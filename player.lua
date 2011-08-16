@@ -33,25 +33,28 @@ function Player:new(seed)
   return o
 end
 
-function Player:give(blocktype)
-  if self.inventory[blocktype] == nil then self.inventory[blocktype] = 1
-  else self.inventory[blocktype] = self.inventory[blocktype] + 1
+function Player:give(block)
+  if block == nil then return end
+  if self.inventory[block] == nil then self.inventory[block] = 1
+  else self.inventory[block] = self.inventory[block] + 1
   end
 end
 
-function Player:take(blocktype)
-  if self.inventory[blocktype] == nil then return false end
-  if self.inventory[blocktype] > 0 then
-    self.inventory[blocktype] = self.inventory[blocktype] - 1
+function Player:take(block)
+  if block == nil then return false end
+  if self.inventory[block] == nil then return false end
+  if self.inventory[block] > 0 then
+    self.inventory[block] = self.inventory[block] - 1
     return true
   else
     return false
   end
 end
 
-function Player:checkInventory(blocktype)
-  if self.inventory[blocktype] == nil then return 0
-  else return self.inventory[blocktype]
+function Player:checkInventory(block)
+  if block == nil then return 0 end
+  if self.inventory[block] == nil then return 0
+  else return self.inventory[block]
   end
 end
 

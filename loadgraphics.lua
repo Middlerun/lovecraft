@@ -7,11 +7,24 @@ for i = 2, 16 do
   images[STONE][i]:setFilter("linear", "nearest")
 end
 
+images[GRASS] = {}
+images[GRASS][1] = love.graphics.newImage("gfx/grass.png")
+for i = 2, 16 do
+  images[GRASS][i] = images[GRASS][1]
+  images[GRASS][i]:setFilter("linear", "nearest")
+end
+
 images[DIRT] = {}
 images[DIRT][1] = love.graphics.newImage("gfx/dirt.png")
 for i = 2, 16 do
   images[DIRT][i] = images[DIRT][1]
   images[DIRT][i]:setFilter("linear", "nearest")
+end
+
+images[COBBLESTONE] = {}
+for i = 1, 16 do
+  images[COBBLESTONE][i] = love.graphics.newImage("gfx/cobblestone" .. i .. ".png")
+  images[COBBLESTONE][i]:setFilter("linear", "nearest")
 end
 
 images[COAL_ORE] = {}
@@ -21,10 +34,18 @@ for i = 2, 16 do
   images[COAL_ORE][i]:setFilter("linear", "nearest")
 end
 
-images[COBBLESTONE] = {}
-for i = 1, 16 do
-  images[COBBLESTONE][i] = love.graphics.newImage("gfx/cobblestone" .. i .. ".png")
-  images[COBBLESTONE][i]:setFilter("linear", "nearest")
+images[WOOD] = {}
+images[WOOD][1] = love.graphics.newImage("gfx/wood.png")
+for i = 2, 16 do
+  images[WOOD][i] = images[WOOD][1]
+  images[WOOD][i]:setFilter("linear", "nearest")
+end
+
+images[LEAVES] = {}
+images[LEAVES][1] = love.graphics.newImage("gfx/leaves.png")
+for i = 2, 16 do
+  images[LEAVES][i] = images[LEAVES][1]
+  images[LEAVES][i]:setFilter("linear", "nearest")
 end
 
 breakImage = {}
