@@ -183,8 +183,17 @@ function love.draw()
   local x, y = love.mouse.getPosition()
   if showPerlin then drawTerrainPerlin(terrain, view.zoom, view.x, view.y)
   else
-    love.graphics.setColor(161, 235, 255, 255)
-    love.graphics.rectangle("fill", -1, -1, love.graphics.getWidth()+2, love.graphics.getHeight()+2)
+    local skyPos = love.graphics.getHeight()/2 - (view.y - 16) * view.zoom / 2
+    if skyPos > 0 then
+      love.graphics.setColor(161, 235, 255, 255)
+      love.graphics.rectangle("fill", -1, -1, love.graphics.getWidth()+2, skyPos)
+    end
+    if skyPos < love.graphics.getHeight() then
+      love.graphics.setColor(0, 26, 34, 255)
+      love.graphics.rectangle("fill", -1, skyPos, love.graphics.getWidth()+2, love.graphics.getHeight() - skyPos)
+    end
+    love.graphics.setColor(255, 255, 255, 255)
+    love.graphics.draw(sky, -1, skyPos, 0, (love.graphics.getWidth()+2)/sky:getWidth(), view.zoom/8, 0, 256)
     drawTerrain(terrain, view.zoom, view.x, view.y)
   end
   love.graphics.setColor(255, 255, 255, 255)

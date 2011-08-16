@@ -55,3 +55,5 @@ for i = 1, 8 do
 end
 genChunk = love.graphics.newImage("gfx/genChunk.png")
 genChunk:setFilter("linear", "nearest")
+
+sky = love.graphics.newImage("gfx/sky.png")

@@ -24,8 +24,10 @@ Requires LÖVE 0.7.2. See http://www.love2d.org for more info.
 To do:
 ------
 
-- More block types, trees, water
 - Tools and items
+- Grappling hook
+- Inventory management system
+- More block types
 - Crafting
 - Music and sound effects
 - Menu screen
@@ -34,6 +36,7 @@ To do:
 - Better graphics
 - Lighting
 - Day/night cycle
+- Water
 
 
 Credits, attributions and other rubbish:
