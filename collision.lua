@@ -22,7 +22,7 @@ function checkCollisions(terrain, player)
         moveFrac = frac
       end
     end
-  end--]]
+  end
   -- Check left hit
   for y = 0, player.height, player.height/2 do
     if player.againstLeftWall and terrain:getBlock(math.ceil(player.y - y), math.ceil(player.x - player.width/2 - 0.01)) ~= AIR then
@@ -35,7 +35,7 @@ function checkCollisions(terrain, player)
         moveFrac = frac
       end
     end
-  end--]]
+  end
   if player.falling then
     -- Check ceiling hit
     for x = -player.width/2, player.width, player.width do
@@ -47,7 +47,7 @@ function checkCollisions(terrain, player)
           moveFrac = frac
         end
       end
-    end--]]
+    end
     -- Check ground hit
     for x = -player.width/2, player.width, player.width do
       if player.y > player.oldY and terrain:getBlock(math.ceil(player.y), math.ceil(player.x + x)) ~= AIR then
@@ -58,12 +58,13 @@ function checkCollisions(terrain, player)
           moveFrac = frac
         end
       end
-    end--]]
+    end
   else
     -- Check player has ground to stand on
     if  terrain:getBlock(math.floor(player.y) + 1, math.floor(player.x - player.width / 2) + 1) == AIR
     and terrain:getBlock(math.floor(player.y) + 1, math.floor(player.x + player.width / 2) + 1) == AIR then
       player.falling = true
+      player.hook:start()
     end
   end
   
@@ -73,20 +74,29 @@ function checkCollisions(terrain, player)
     player.x = player.oldX + 0.99 * moveFrac * (player.x - player.oldX)
     player.y = player.oldY + 0.99 * moveFrac * (player.y - player.oldY)
   end
+  
   if hit == leftWall then
     player.vx = 0
     player.againstLeftWall = true
+    if player.hook.angle < math.pi/2 or player.hook.angle > 3 * math.pi/2 then player.hook:stop()
+    else player.hook:zero()
+    end
   elseif hit == rightWall then
     player.vx = 0
     player.againstRightWall = true
+    if player.hook.angle > math.pi/2 and player.hook.angle < 3 * math.pi/2 then player.hook:stop()
+    else player.hook:zero()
+    end
   elseif hit == ceiling then
     player.vy = 0
+    player.hook:zero()
   elseif hit == ground then
-    landTime = 0.01 * player.vy
-    if landTime < 0.1 then landTime = 0 end
+    player.landTime = 0.01 * player.vy
+    if player.landTime < 0.1 then player.landTime = 0 end
     player.vy = 0
     player.y = math.ceil(player.y - 0.5)
     player.falling = false
+    player.hook:stop()
   end
   
   player.oldX = player.x

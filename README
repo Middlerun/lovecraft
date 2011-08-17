@@ -11,11 +11,15 @@ http://www.middlerun.net
 A 2D Minecraft-style game.
 
 Controls:
-Movement:      WASD
-Break block:   Left mouse
-Place block:   Right mouse
-Select block:  Scroll wheel
-Jump:          Space
+Move left:           A
+Move right:          D
+Break block:         Left mouse
+Place block:         Right mouse
+Select block:        Scroll wheel
+Fire grappling hook: Middle mouse
+Jump / release hook: Space
+Shorten hook line:   W
+Lengthen hook line:  S
 
 
 Requires LÖVE 0.7.2. See http://www.love2d.org for more info.
@@ -24,8 +28,8 @@ Requires LÖVE 0.7.2. See http://www.love2d.org for more info.
 To do:
 ------
 
+- Fix grappling hook bugs
 - Tools and items
-- Grappling hook
 - Inventory management system
 - More block types
 - Crafting

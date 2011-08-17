@@ -1,6 +1,7 @@
 love.filesystem.load("perlin.lua")()
 love.filesystem.load("chunk.lua")()
 love.filesystem.load("terrain.lua")()
+love.filesystem.load("grapplinghook.lua")()
 love.filesystem.load("player.lua")()
 love.filesystem.load("collision.lua")()
 love.filesystem.load("common.lua")()
@@ -53,46 +54,20 @@ function love.update(dt)
   if dt > 0.1 then dt = 0.1 end
   local oldx = player.x
   local oldy = player.y
-  if not first and player.falling then
-    player.vy = player.vy + 40 * dt
-    if     love.keyboard.isDown("a") and not player.againstLeftWall  then
-      player.vx = math.max(-8, player.vx - 16 * dt)
-      player.direction = -1
-      landTime = 0
-    elseif love.keyboard.isDown("d") and not player.againstRightWall then
-      player.vx = math.min( 8, player.vx + 16 * dt)
-      player.direction = 1
-      landTime = 0
-    end
-  end
-  if not first and not player.falling then
-    if     love.keyboard.isDown("a") and not player.againstLeftWall  then
-      player.vx = math.max(-8, player.vx - 36 * dt)
-      player.direction = -1
-      landTime = 0
-    elseif love.keyboard.isDown("d") and not player.againstRightWall then
-      player.vx = math.min( 8, player.vx + 36 * dt)
-      player.direction = 1
-      landTime = 0
-    elseif player.vx > 0 then player.vx = math.max(0, player.vx - 128 * dt)
-    elseif player.vx < 0 then player.vx = math.min(0, player.vx + 128 * dt)
-    end
-  end
-  player.x = player.x + player.vx * dt
-  player.y = player.y + player.vy * dt
-  
-  if not player.falling and math.abs(player.vx) > 0.5 and (love.keyboard.isDown("a") or love.keyboard.isDown("d")) then
-    if not player.walking then player.walk:seek(5) end
-    player.walking = true
-  else
-    player.walking = false
+  if not first then
+    player:update(dt)
   end
   
   checkCollisions(terrain, player)
   
-  if love.keyboard.isDown("w") and not player.falling then
+  if not player.hook.hooked and love.keyboard.isDown(" ") and not player.falling then
     player.falling = true
     player.vy = -15
+  end
+  if player.hook.hooked and love.keyboard.isDown("w") then
+    player.hook:shorten(dt)
+  elseif player.hook.hooked and love.keyboard.isDown("s") then
+    player.hook:lengthen(dt)
   end
   
   view.x = view.x + (player.x - view.x) * 0.2
@@ -103,8 +78,6 @@ function love.update(dt)
     view.x = player.x - (player.x - view.x) * (maxViewDist / viewDist)
     view.y = player.y - (player.y - view.y) * (maxViewDist / viewDist)
   end
-  --view.x = player.x
-  --view.y = player.y + player.height / 2
   first = false
   
   cursor.x = (love.mouse.getX() - love.graphics.getWidth()  / 2) / view.zoom + view.x
@@ -139,7 +112,7 @@ function love.update(dt)
         mineProgress = dt / durability[block]
       end
     elseif love.mouse.isDown("r") and block == AIR and placeTime > 0.2 then
-    
+      
       -- Temporary hack, change later
       if selected == 1 then block = DIRT
       elseif selected == 2 then block = STONE
@@ -165,8 +138,8 @@ function love.update(dt)
   end
   
   placeTime = placeTime + dt
-  landTime = landTime - dt
   player.walk:update(dt)
+  player.hook:update(terrain, dt)
   
   -- Generate new chunks
   for r = math.floor((player.y - 80) / 32), math.floor((player.y + 80) / 32) do
@@ -181,33 +154,12 @@ end
 
 function love.draw()
   local x, y = love.mouse.getPosition()
-  if showPerlin then drawTerrainPerlin(terrain, view.zoom, view.x, view.y)
+  if showPerlin then terrain:drawPerlin(view)
   else
-    local skyPos = love.graphics.getHeight()/2 - (view.y - 16) * view.zoom / 2
-    if skyPos > 0 then
-      love.graphics.setColor(161, 235, 255, 255)
-      love.graphics.rectangle("fill", -1, -1, love.graphics.getWidth()+2, skyPos)
-    end
-    if skyPos < love.graphics.getHeight() then
-      love.graphics.setColor(0, 26, 34, 255)
-      love.graphics.rectangle("fill", -1, skyPos, love.graphics.getWidth()+2, love.graphics.getHeight() - skyPos)
-    end
-    love.graphics.setColor(255, 255, 255, 255)
-    love.graphics.draw(sky, -1, skyPos, 0, (love.graphics.getWidth()+2)/sky:getWidth(), view.zoom/8, 0, 256)
-    drawTerrain(terrain, view.zoom, view.x, view.y)
+    terrain:draw(view)
   end
   love.graphics.setColor(255, 255, 255, 255)
-  if player.walking then
-    player.walk:draw((player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
-  elseif player.falling and player.vy < 0 then
-    love.graphics.draw(player.jump1, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
-  elseif player.falling then
-    love.graphics.draw(player.jump2, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
-  elseif landTime > 0 then
-    love.graphics.draw(player.land, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
-  else
-    love.graphics.draw(player.stand, (player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, player.direction * view.zoom/32, view.zoom/32, 34, 103)
-  end
+  player:draw(view)
   
   -- Can't remember what this was for:
   --love.graphics.line((player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y-1.5)*view.zoom+love.graphics.getHeight()/2, (cursor.x-view.x)*view.zoom + love.graphics.getWidth()/2, (cursor.y-view.y)*view.zoom+love.graphics.getHeight()/2)
@@ -259,6 +211,8 @@ function love.keypressed(k, u)
   elseif k == "f3" then
     debug = not debug
     instamine = debug
+  elseif k == " " then
+    if player.hook.fired then player.hook:reset() end
   end
 end
 
@@ -271,48 +225,14 @@ end
 
 
 function love.mousepressed(x, y, button)
-  if button == "wd" then
+  if button == "m" then
+    player.hook:fire(player.x, player.y - player.height/2, cursor.x - player.x, cursor.y - (player.y - player.height/2))
+  elseif button == "wd" then
     selected = selected + 1
     if selected == 6 then selected = 1 end
   elseif button == "wu" then
     selected = selected - 1
     if selected == 0 then selected = 5 end
-  end
-end
-
-
-
-function drawTerrain(terrain, zoom, x, y)
-  local minR = math.max(terrain.rMin, math.floor((y - zoom * (love.graphics.getHeight() / 2)) / 32))
-  local maxR = math.min(terrain.rMax, math.floor((y + zoom * (love.graphics.getHeight() / 2)) / 32))
-  local minC = math.max(terrain.cMin, math.floor((x - zoom * (love.graphics.getWidth()  / 2)) / 32))
-  local maxC = math.min(terrain.cMax, math.floor((x + zoom * (love.graphics.getWidth()  / 2)) / 32))
-  love.graphics.setColor(255, 255, 255, 255)
-  for r = minR, maxR do
-    for c = minC, maxC do
-      if terrain:hasChunk(r, c) then
-        if terrain:getChunk(r, c).framebuffer == nil then terrain:getChunk(r, c):render() end
-        love.graphics.draw(terrain:getChunk(r, c).framebuffer, (32*c-x)*zoom + love.graphics.getWidth()/2, (32*r-y)*zoom+love.graphics.getHeight()/2, 0, zoom/16, zoom/16)
-      end
-    end
-  end
-end
-
-
-
-function drawTerrainPerlin(terrain, zoom, x, y)
-  local minR = math.max(terrain.rMin, math.floor((y - zoom * (love.graphics.getHeight() / 2)) / 32))
-  local maxR = math.min(terrain.rMax, math.floor((y + zoom * (love.graphics.getHeight() / 2)) / 32))
-  local minC = math.max(terrain.cMin, math.floor((x - zoom * (love.graphics.getWidth()  / 2)) / 32))
-  local maxC = math.min(terrain.cMax, math.floor((x + zoom * (love.graphics.getWidth()  / 2)) / 32))
-  love.graphics.setColor(255, 255, 255, 255)
-  for r = minR, maxR do
-    for c = minC, maxC do
-      if terrain:hasChunk(r, c) then
-        if terrain:getChunk(r, c).framebufferPerlin == nil then terrain:getChunk(r, c):renderPerlin() end
-        love.graphics.draw(terrain:getChunk(r, c).framebufferPerlin, (32*c-x)*zoom + love.graphics.getWidth()/2, (32*r-y)*zoom+love.graphics.getHeight()/2, 0, zoom/16, zoom/16)
-      end
-    end
   end
 end
 

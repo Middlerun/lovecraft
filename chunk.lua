@@ -1,7 +1,7 @@
 Chunk = {}
 
 function Chunk:new()
-  o = {}
+  local o = {}
   setmetatable(o, self)
   self.__index = self
   

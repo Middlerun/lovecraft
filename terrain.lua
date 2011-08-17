@@ -3,15 +3,15 @@ love.filesystem.load("TSerial.lua")()
 Terrain = {}
 
 function Terrain:new(seed)
-  o = {}
+  local o = {}
   setmetatable(o, self)
   self.__index = self
   
   o.seed = seed or os.time()
   o.chunk = {}
   o.generationQueue = {}
-  o.rMin = -2
-  o.rMax = 1
+  o.rMin = -3
+  o.rMax = 0
   o.cMin = -2
   o.cMax = 1
   
@@ -132,6 +132,50 @@ function Terrain:checkGenerator()
     if chunkRC ~= nil then
       local command = {seed = self:getSeed(), r = chunkRC.r, c = chunkRC.c}
       generator:send("command", TSerial.pack(command))
+    end
+  end
+end
+
+function Terrain:draw(view)
+  local skyPos = love.graphics.getHeight()/2 - (view.y - 16) * view.zoom / 2
+  if skyPos > 0 then
+    love.graphics.setColor(161, 235, 255, 255)
+    love.graphics.rectangle("fill", -1, -1, love.graphics.getWidth()+2, skyPos)
+  end
+  if skyPos < love.graphics.getHeight() then
+    love.graphics.setColor(0, 26, 34, 255)
+    love.graphics.rectangle("fill", -1, skyPos, love.graphics.getWidth()+2, love.graphics.getHeight() - skyPos)
+  end
+  love.graphics.setColor(255, 255, 255, 255)
+  love.graphics.draw(sky, -1, skyPos, 0, (love.graphics.getWidth()+2)/sky:getWidth(), view.zoom/8, 0, 256)
+  
+  local minR = math.max(terrain.rMin, math.floor((view.y - view.zoom * (love.graphics.getHeight() / 2)) / 32))
+  local maxR = math.min(terrain.rMax, math.floor((view.y + view.zoom * (love.graphics.getHeight() / 2)) / 32))
+  local minC = math.max(terrain.cMin, math.floor((view.x - view.zoom * (love.graphics.getWidth()  / 2)) / 32))
+  local maxC = math.min(terrain.cMax, math.floor((view.x + view.zoom * (love.graphics.getWidth()  / 2)) / 32))
+  love.graphics.setColor(255, 255, 255, 255)
+  for r = minR, maxR do
+    for c = minC, maxC do
+      if terrain:hasChunk(r, c) then
+        if terrain:getChunk(r, c).framebuffer == nil then terrain:getChunk(r, c):render() end
+        love.graphics.draw(terrain:getChunk(r, c).framebuffer, (32*c-view.x)*view.zoom + love.graphics.getWidth()/2, (32*r-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/16, view.zoom/16)
+      end
+    end
+  end
+end
+
+function Terrain:drawPerlin(view)
+  local minR = math.max(terrain.rMin, math.floor((view.y - view.zoom * (love.graphics.getHeight() / 2)) / 32))
+  local maxR = math.min(terrain.rMax, math.floor((view.y + view.zoom * (love.graphics.getHeight() / 2)) / 32))
+  local minC = math.max(terrain.cMin, math.floor((view.x - view.zoom * (love.graphics.getWidth()  / 2)) / 32))
+  local maxC = math.min(terrain.cMax, math.floor((view.x + view.zoom * (love.graphics.getWidth()  / 2)) / 32))
+  love.graphics.setColor(255, 255, 255, 255)
+  for r = minR, maxR do
+    for c = minC, maxC do
+      if terrain:hasChunk(r, c) then
+        if terrain:getChunk(r, c).framebufferPerlin == nil then terrain:getChunk(r, c):renderPerlin() end
+        love.graphics.draw(terrain:getChunk(r, c).framebufferPerlin, (32*c-view.x)*view.zoom + love.graphics.getWidth()/2, (32*r-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/16, view.zoom/16)
+      end
     end
   end
 end
