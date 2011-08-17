@@ -32,6 +32,14 @@ breakGive[COAL_ORE] = COAL_ORE
 breakGive[WOOD] = WOOD
 breakGive[LEAVES] = nil
 
+function joinsTo(blockA, blockB)
+  if blockA == nil or blockB == nil then return false
+  elseif blockA == blockB then return true
+  elseif blockA == LEAVES and blockB == WOOD then return true
+  else return false
+  end
+end
+
 -- Random number engine
 rand = {mySeed = 1, lastN = -1}
 function rand:get(seed, n)

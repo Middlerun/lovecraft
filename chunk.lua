@@ -218,10 +218,10 @@ function Chunk:render()
     for c = 1, 32 do
       if self.block[r][c] ~= AIR and self.block[r][c] ~= UNGENERATED then
         num = 1
-        if self:getBlock(r-1, c) == self.block[r][c] then num = num + 1 end
-        if self:getBlock(r, c+1) == self.block[r][c] then num = num + 2 end
-        if self:getBlock(r+1, c) == self.block[r][c] then num = num + 4 end
-        if self:getBlock(r, c-1) == self.block[r][c] then num = num + 8 end
+        if joinsTo(self.block[r][c], self:getBlock(r-1, c)) then num = num + 1 end
+        if joinsTo(self.block[r][c], self:getBlock(r, c+1)) then num = num + 2 end
+        if joinsTo(self.block[r][c], self:getBlock(r+1, c)) then num = num + 4 end
+        if joinsTo(self.block[r][c], self:getBlock(r, c-1)) then num = num + 8 end
         love.graphics.draw(images[self.block[r][c]][num], (c-1)*16, (r-1)*16)
       end
     end

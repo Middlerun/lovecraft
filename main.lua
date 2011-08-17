@@ -50,7 +50,7 @@ end
 
 
 function love.update(dt)
-  if dt > 0.2 then dt = 0.2 end
+  if dt > 0.1 then dt = 0.1 end
   local oldx = player.x
   local oldy = player.y
   if not first and player.falling then
@@ -258,6 +258,7 @@ function love.keypressed(k, u)
     if view.zoom < 256 then view.zoom = view.zoom * 2 end
   elseif k == "f3" then
     debug = not debug
+    instamine = debug
   end
 end
 

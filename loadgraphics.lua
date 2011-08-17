@@ -42,9 +42,8 @@ for i = 2, 16 do
 end
 
 images[LEAVES] = {}
-images[LEAVES][1] = love.graphics.newImage("gfx/leaves.png")
-for i = 2, 16 do
-  images[LEAVES][i] = images[LEAVES][1]
+for i = 1, 16 do
+  images[LEAVES][i] = love.graphics.newImage("gfx/leaves" .. i .. ".png")
   images[LEAVES][i]:setFilter("linear", "nearest")
 end
 
