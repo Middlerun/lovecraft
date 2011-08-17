@@ -79,6 +79,13 @@ function Terrain:generateInitial()
          end
         end
       end
+      for r = -1, 1 do
+        for c = -1, 1 do
+          if self:hasChunk(chunk.r + r, chunk.c + c) then
+            self:getChunk(chunk.r + r, chunk.c + c):render()
+          end
+        end
+      end
     end
   end
 end
@@ -104,12 +111,18 @@ function Terrain:checkGenerator()
       end
     end
     chunk.generated = true
-    chunk:render()
     chunk:renderPerlin()
     for r = 0, 1 do
       for c = -1, 1 do
         if self:hasChunk(chunk.r + r, chunk.c + c) then
           self:getChunk(chunk.r + r, chunk.c + c):generateTrees()
+        end
+      end
+    end
+    for r = -1, 1 do
+      for c = -1, 1 do
+        if self:hasChunk(chunk.r + r, chunk.c + c) then
+          self:getChunk(chunk.r + r, chunk.c + c):render()
         end
       end
     end

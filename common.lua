@@ -32,11 +32,26 @@ breakGive[COAL_ORE] = COAL_ORE
 breakGive[WOOD] = WOOD
 breakGive[LEAVES] = nil
 
-function joinsTo(blockA, blockB)
+UP = 1
+RIGHT = 2
+DOWN = 3
+LEFT = 4
+
+function joinsTo(blockA, blockB, direction)
   if blockA == nil or blockB == nil then return false
   elseif blockA == blockB then return true
   elseif blockA == LEAVES and blockB == WOOD then return true
+  elseif blockA == STONE and (blockB == DIRT or blockB == COAL_ORE) then return true
+  elseif blockA == DIRT and (blockB == STONE or blockB == COAL_ORE) then return true
+  elseif blockA == COAL_ORE and (blockB == STONE or blockB == DIRT) then return true
+  elseif blockA == WOOD and blockB == DIRT and direction == DOWN then return true
   else return false
+  end
+end
+
+function tileBase(block)
+  if block == COAL_ORE then return STONE
+  else return nil
   end
 end
 
