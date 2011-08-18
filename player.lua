@@ -65,10 +65,11 @@ end
 function Player:update(dt)
   if self.hook.hooked then
     self.x,  self.y  = self.hook:endPoint()
+    self.y = self.y + player.height/2
     self.vx, self.vy = self.hook:endVelocity()
     self.walking = false
   else
-    if self.falling then
+    if self.falling and not self.hook.hooked then
       self.vy = self.vy + 40 * dt
       if     love.keyboard.isDown("a") and not self.againstLeftWall  then
         self.vx = math.max(-8, self.vx - 16 * dt)
@@ -80,7 +81,7 @@ function Player:update(dt)
         self.landTime = 0
       end
     end
-    if not first and not self.falling then
+    if not first and not self.falling and not self.hook.hooked then
       if     love.keyboard.isDown("a") and not self.againstLeftWall  then
         self.vx = math.max(-8, self.vx - 36 * dt)
         self.direction = -1
@@ -108,11 +109,9 @@ function Player:update(dt)
 end
 
 function Player:draw(view)
-  if self.hook.hooked then
-    love.graphics.draw(self.jump2, (self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom + love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
-  elseif self.walking then
+  if self.walking then
     self.walk:draw((self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
-  elseif self.falling and self.vy < 0 then
+  elseif self.falling and self.vy < 0 and not self.hook.hooked then
     love.graphics.draw(self.jump1, (self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom + love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
   elseif self.falling then
     love.graphics.draw(self.jump2, (self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom + love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)

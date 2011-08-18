@@ -41,9 +41,10 @@ function joinsTo(blockA, blockB, direction)
   if blockA == nil or blockB == nil then return false
   elseif blockA == blockB then return true
   elseif blockA == LEAVES and blockB == WOOD then return true
-  elseif blockA == STONE and (blockB == DIRT or blockB == COAL_ORE) then return true
-  elseif blockA == DIRT and (blockB == STONE or blockB == COAL_ORE) then return true
-  elseif blockA == COAL_ORE and (blockB == STONE or blockB == DIRT) then return true
+  elseif blockA == STONE and (blockB == DIRT or blockB == COAL_ORE or blockB == GRASS) then return true
+  elseif blockA == DIRT and (blockB == STONE or blockB == COAL_ORE or blockB == GRASS) then return true
+  elseif blockA == COAL_ORE and (blockB == STONE or blockB == DIRT or blockB == GRASS) then return true
+  elseif blockA == GRASS and (blockB == STONE or blockB == DIRT or blockB == COAL_ORE) then return true
   elseif blockA == WOOD and blockB == DIRT and direction == DOWN then return true
   else return false
   end
@@ -51,6 +52,7 @@ end
 
 function tileBase(block)
   if block == COAL_ORE then return STONE
+  elseif block == GRASS then return DIRT
   else return nil
   end
 end

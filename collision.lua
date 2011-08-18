@@ -78,13 +78,13 @@ function checkCollisions(terrain, player)
   if hit == leftWall then
     player.vx = 0
     player.againstLeftWall = true
-    if player.hook.angle < math.pi/2 or player.hook.angle > 3 * math.pi/2 then player.hook:stop()
+    if player.hook.angle < math.pi/2 or player.hook.angle > math.pi and player.hook.angle < 3 * math.pi/2 then player.hook:stop()
     else player.hook:zero()
     end
   elseif hit == rightWall then
     player.vx = 0
     player.againstRightWall = true
-    if player.hook.angle > math.pi/2 and player.hook.angle < 3 * math.pi/2 then player.hook:stop()
+    if player.hook.angle > math.pi/2 and player.hook.angle < math.pi or player.hook.angle > 3 * math.pi/2 then player.hook:stop()
     else player.hook:zero()
     end
   elseif hit == ceiling then

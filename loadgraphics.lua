@@ -6,17 +6,25 @@ for i = 1, 16 do
   images[STONE][i]:setFilter("linear", "nearest")
 end
 
+grassFlat   = love.graphics.newImage("gfx/tiles/grassFlat.png")
+grassSingle = love.graphics.newImage("gfx/tiles/grassSingle.png")
+grassLeft   = love.graphics.newImage("gfx/tiles/grassLeft.png")
+grassRight  = love.graphics.newImage("gfx/tiles/grassRight.png")
 images[GRASS] = {}
-images[GRASS][1] = love.graphics.newImage("gfx/tiles/grass.png")
-for i = 2, 16 do
-  images[GRASS][i] = images[GRASS][1]
+for i = 1, 16 do
+  images[GRASS][i] = grassFlat
   images[GRASS][i]:setFilter("linear", "nearest")
 end
+images[GRASS][1]  = grassSingle
+images[GRASS][3]  = grassLeft
+images[GRASS][5]  = grassSingle
+images[GRASS][7]  = grassLeft
+images[GRASS][9]  = grassRight
+images[GRASS][13] = grassRight
 
 images[DIRT] = {}
-images[DIRT][1] = love.graphics.newImage("gfx/tiles/dirt.png")
-for i = 2, 16 do
-  images[DIRT][i] = images[DIRT][1]
+for i = 1, 16 do
+  images[DIRT][i] = love.graphics.newImage("gfx/tiles/dirt" .. i .. ".png")
   images[DIRT][i]:setFilter("linear", "nearest")
 end
 

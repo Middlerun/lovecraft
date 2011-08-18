@@ -24,6 +24,7 @@ landTime = 0
 entities = {}
 instamine = false
 debug = false
+hookRelease = false
 
 
 
@@ -60,7 +61,7 @@ function love.update(dt)
   
   checkCollisions(terrain, player)
   
-  if not player.hook.hooked and love.keyboard.isDown(" ") and not player.falling then
+  if not player.hook.hooked and love.keyboard.isDown(" ") and not player.falling and not hookRelease then
     player.falling = true
     player.vy = -15
   end
@@ -212,14 +213,19 @@ function love.keypressed(k, u)
     debug = not debug
     instamine = debug
   elseif k == " " then
-    if player.hook.fired then player.hook:reset() end
+    if player.hook.fired then
+      player.hook:reset()
+      hookRelease = true
+    end
   end
 end
 
 
 
 function love.keyreleased(k)
-
+  if k == " " then
+    hookRelease = false
+  end
 end
 
 
