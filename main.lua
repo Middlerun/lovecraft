@@ -21,7 +21,6 @@ selected = 1
 mineBlock = {r = nil, c = nil}
 mineProgress = 0
 placeTime = 0
-landTime = 0
 instamine = false
 debug = false
 hookRelease = false
@@ -133,22 +132,12 @@ function love.update(dt)
         mineProgress = dt / durability[block]
       end
     elseif love.mouse.isDown("r") and block == AIR and placeTime > 0.2 then
-      
-      -- Temporary hack, change later
-      if selected == 1 then block = DIRT
-      elseif selected == 2 then block = STONE
-      elseif selected == 3 then block = COBBLESTONE
-      elseif selected == 4 then block = COAL_ORE
-      elseif selected == 5 then block = WOOD
-      end
-      -- end hack
-      
       local x = math.ceil(cursor.x)
       local y = math.ceil(cursor.y)
       if x - 1 >= player.x + player.width / 2 or x <= player.x - player.width / 2
       or y - 1 >= player.y or y <= player.y - player.height then
-        if player:take(block) then
-          terrain:setBlock(y, x, block)
+        if player:checkSlot(selected) then
+          terrain:setBlock(y, x, player:takeSlot(selected))
           placeTime = 0
         end
       end
@@ -182,9 +171,6 @@ function love.draw()
   love.graphics.setColor(255, 255, 255, 255)
   player:draw(view)
   
-  -- Can't remember what this was for:
-  --love.graphics.line((player.x-view.x)*view.zoom + love.graphics.getWidth()/2, (player.y-view.y-1.5)*view.zoom+love.graphics.getHeight()/2, (cursor.x-view.x)*view.zoom + love.graphics.getWidth()/2, (cursor.y-view.y)*view.zoom+love.graphics.getHeight()/2)
-  
   love.graphics.setColor(0, 0, 0, cursorAlpha)
   if inreach then
     love.graphics.rectangle("line", (math.ceil(cursor.x)-1-view.x)*view.zoom + love.graphics.getWidth()/2, (math.ceil(cursor.y)-1-view.y)*view.zoom+love.graphics.getHeight()/2, view.zoom, view.zoom)
@@ -194,21 +180,17 @@ function love.draw()
     love.graphics.draw(breakImage[math.ceil(mineProgress * 8)], (mineBlock.c-1-view.x)*view.zoom + love.graphics.getWidth()/2, (mineBlock.r-1-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/16, view.zoom/16)
   end
   
-  love.graphics.setColor(0, 0, 0, 127)
-  if selected == 1 then love.graphics.setColor(0, 0, 0, 255) end
-  love.graphics.print("Dirt: " .. player:checkInventory(DIRT), 50, 50)
-  love.graphics.setColor(0, 0, 0, 127)
-  if selected == 2 then love.graphics.setColor(0, 0, 0, 255) end
-  love.graphics.print("Stone: " .. player:checkInventory(STONE), 50, 80)
-  love.graphics.setColor(0, 0, 0, 127)
-  if selected == 3 then love.graphics.setColor(0, 0, 0, 255) end
-  love.graphics.print("Cobblestone: " .. player:checkInventory(COBBLESTONE), 50, 110)
-  love.graphics.setColor(0, 0, 0, 127)
-  if selected == 4 then love.graphics.setColor(0, 0, 0, 255) end
-  love.graphics.print("Coal ore: " .. player:checkInventory(COAL_ORE), 50, 140)
-  love.graphics.setColor(0, 0, 0, 127)
-  if selected == 5 then love.graphics.setColor(0, 0, 0, 255) end
-  love.graphics.print("Wood: " .. player:checkInventory(WOOD), 50, 170)
+  love.graphics.setColor(255, 255, 255, 255)
+  love.graphics.draw(hotbar, love.graphics.getWidth()/2 - hotbar:getWidth()/2, love.graphics.getHeight() - hotbar:getHeight())
+  love.graphics.draw(highlight, love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 20 + 54 * (selected - 1), love.graphics.getHeight() - hotbar:getHeight() + 8)
+  for i = 1, 9 do
+    if player.hotbar[i].id ~= nil then
+      local base = tileBase(player.hotbar[i].id)
+      if base ~= nil then love.graphics.draw(images[base][1], love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 39 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 26, 0, 1, 1, images[player.hotbar[i].id][1]:getWidth()/2, images[player.hotbar[i].id][1]:getHeight()/2) end
+      love.graphics.draw(images[player.hotbar[i].id][1], love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 39 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 26, 0, 1, 1, images[player.hotbar[i].id][1]:getWidth()/2, images[player.hotbar[i].id][1]:getHeight()/2)
+      love.graphics.print(player.hotbar[i].count, love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 50 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 35)
+    end
+  end
   
   if debug then
     love.graphics.setColor(0, 0, 0, 255)
@@ -255,10 +237,10 @@ function love.mousepressed(x, y, button)
     player.hook:fire(player.x, player.y - player.height/2, cursor.x - player.x, cursor.y - (player.y - player.height/2))
   elseif button == "wd" then
     selected = selected + 1
-    if selected == 6 then selected = 1 end
+    if selected == 10 then selected = 1 end
   elseif button == "wu" then
     selected = selected - 1
-    if selected == 0 then selected = 5 end
+    if selected == 0 then selected = 9 end
   end
 end
 

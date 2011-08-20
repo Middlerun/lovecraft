@@ -33,34 +33,52 @@ function Player:new()
   o.direction = 1
   o.hook = GrapplingHook:new(o)
   o.landTime = 0
+  o.hotbar = {}
+  for i = 1, 9 do
+    o.hotbar[i] = {}
+  end
   
   return o
 end
 
-function Player:give(block)
-  if block == nil then return false end
-  if self.inventory[block] == nil then self.inventory[block] = 1
-  else self.inventory[block] = self.inventory[block] + 1
+function Player:give(thing)
+  if thing == nil then return false end
+  
+  for i = 1, 9 do
+    if self.hotbar[i].id == thing and self.hotbar[i].count ~= nil and self.hotbar[i].count < 64 then
+      self.hotbar[i].count = self.hotbar[i].count + 1
+      return true
+    end
   end
-  return true
+  for i = 1, 9 do
+    if self.hotbar[i].id == nil then
+      self.hotbar[i].id = thing
+      self.hotbar[i].count = 1
+      return true
+    end
+  end
+  return false
 end
 
-function Player:take(block)
-  if block == nil then return false end
-  if self.inventory[block] == nil then return false end
-  if self.inventory[block] > 0 then
-    self.inventory[block] = self.inventory[block] - 1
-    return true
+function Player:takeSlot(slot)
+  assert (slot ~= nil)
+  assert (slot >= 1)
+  assert (slot <= 9)
+  if self.hotbar[slot].id == nil or self.hotbar[slot].count == nil or self.hotbar[slot].count <= 0 then return nil
   else
-    return false
+    self.hotbar[slot].count = self.hotbar[slot].count - 1
+    local id = self.hotbar[slot].id
+    if self.hotbar[slot].count == 0 then self.hotbar[slot].id = nil end
+    return id
   end
 end
 
-function Player:checkInventory(block)
-  if block == nil then return 0 end
-  if self.inventory[block] == nil then return 0
-  else return self.inventory[block]
-  end
+function Player:checkSlot(slot)
+  assert (slot ~= nil)
+  assert (slot >= 1)
+  assert (slot <= 9)
+  if self.hotbar[slot].id == nil or self.hotbar[slot].count == nil or self.hotbar[slot].count <= 0 then return nil
+  else return self.hotbar[slot].id end
 end
 
 function Player:update(dt)

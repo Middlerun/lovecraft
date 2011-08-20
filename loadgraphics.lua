@@ -58,7 +58,11 @@ for i = 1, 8 do
   breakImage[i] = love.graphics.newImage("gfx/tiles/break" .. i .. ".png")
   breakImage[i]:setFilter("linear", "nearest")
 end
+
 genChunk = love.graphics.newImage("gfx/genChunk.png")
 genChunk:setFilter("linear", "nearest")
 
 sky = love.graphics.newImage("gfx/sky.png")
+
+hotbar = love.graphics.newImage("gfx/hotbar.png")
+highlight = love.graphics.newImage("gfx/highlight.png")
