@@ -298,3 +298,8 @@ function Chunk:generateTrees()
     self.treesGenerated = true
   end
 end
+
+function Chunk:draw(view)
+  if self.framebuffer == nil then self:render() end
+  love.graphics.draw(self.framebuffer, (32*self.c-view.x)*view.zoom + love.graphics.getWidth()/2, (32*self.r-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/16, view.zoom/16)
+end

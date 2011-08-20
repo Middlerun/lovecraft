@@ -6,6 +6,7 @@ love.filesystem.load("player.lua")()
 love.filesystem.load("collision.lua")()
 love.filesystem.load("common.lua")()
 love.filesystem.load("loadgraphics.lua")()
+love.filesystem.load("entity.lua")()
 love.filesystem.load("AnAL.lua")()
 love.filesystem.setIdentity("lovecraft")
 
@@ -21,10 +22,10 @@ mineBlock = {r = nil, c = nil}
 mineProgress = 0
 placeTime = 0
 landTime = 0
-entities = {}
 instamine = false
 debug = false
 hookRelease = false
+g = 40
 
 
 
@@ -59,16 +60,35 @@ function love.update(dt)
     player:update(dt)
   end
   
+  for i = 1, #terrain.entities do
+    local entity = terrain.entities[i]
+    if entity.falling then
+      entity.vy = entity.vy + g * dt
+      entity.y = entity.y + entity.vy * dt
+    end
+  end
+  
   checkCollisions(terrain, player)
   
   if not player.hook.hooked and love.keyboard.isDown(" ") and not player.falling and not hookRelease then
     player.falling = true
     player.vy = -15
   end
-  if player.hook.hooked and love.keyboard.isDown("w") then
-    player.hook:shorten(dt)
-  elseif player.hook.hooked and love.keyboard.isDown("s") then
-    player.hook:lengthen(dt)
+  if player.hook.hooked then
+    if love.keyboard.isDown("w") then
+      player.hook:shorten(dt)
+    elseif love.keyboard.isDown("s") then
+      player.hook:lengthen(dt)
+    end
+    if love.keyboard.isDown("a") then
+      player.hook.push = 2
+      player.direction = -1
+    elseif love.keyboard.isDown("d") then
+      player.hook.push = -2
+      player.direction = 1
+    else
+      player.hook.push = 0
+    end
   end
   
   view.x = view.x + (player.x - view.x) * 0.2
@@ -101,11 +121,11 @@ function love.update(dt)
       if math.ceil(cursor.x) == mineBlock.c and math.ceil(cursor.y) == mineBlock.r then
         mineProgress = mineProgress + dt / durability[block]
         if mineProgress >= 1 or instamine then
-          player:give(breakGive[block])
           terrain:setBlock(math.ceil(cursor.y), math.ceil(cursor.x), AIR)
           mineProgress = 0
           mineBlock.r = nil
           mineBlock.c = nil
+          terrain:addEntity(breakGive[block], math.ceil(cursor.y), math.ceil(cursor.x) - 0.5 - rand:num())
         end
       else
         mineBlock.r = math.ceil(cursor.y)

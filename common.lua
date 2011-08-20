@@ -75,3 +75,8 @@ function rand:get(seed, n)
   end
   return num - 0.5
 end
+
+function rand:num()
+  rand.lastN = -1
+  return math.random() - 0.5
+end

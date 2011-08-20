@@ -5,8 +5,8 @@ function Player:new()
   setmetatable(o, self)
   self.__index = self
 
-  o.x = 0.5
-  o.y = -40
+  o.x = 0
+  o.y = 0
   o.height = 1.8
   o.width = 0.7
   o.falling = true
@@ -38,10 +38,11 @@ function Player:new()
 end
 
 function Player:give(block)
-  if block == nil then return end
+  if block == nil then return false end
   if self.inventory[block] == nil then self.inventory[block] = 1
   else self.inventory[block] = self.inventory[block] + 1
   end
+  return true
 end
 
 function Player:take(block)
@@ -70,7 +71,7 @@ function Player:update(dt)
     self.walking = false
   else
     if self.falling and not self.hook.hooked then
-      self.vy = self.vy + 40 * dt
+      self.vy = self.vy + g * dt
       if     love.keyboard.isDown("a") and not self.againstLeftWall  then
         self.vx = math.max(-8, self.vx - 16 * dt)
         self.direction = -1
@@ -109,6 +110,8 @@ function Player:update(dt)
 end
 
 function Player:draw(view)
+  self.hook:draw(view, self.x, self.y - self.height/2)
+  love.graphics.setColor(255, 255, 255, 255)
   if self.walking then
     self.walk:draw((self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
   elseif self.falling and self.vy < 0 and not self.hook.hooked then
@@ -120,5 +123,4 @@ function Player:draw(view)
   else
     love.graphics.draw(self.stand, (self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom + love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
   end
-  self.hook:draw(view, self.x, self.y - self.height/2)
 end

@@ -30,6 +30,7 @@ function GrapplingHook:fire(x, y, dx, dy)
   self.fired = true
   self.hooked = false
   self.swinging = true
+  self.push = 0
 end
 
 function GrapplingHook:hook()
@@ -177,7 +178,7 @@ function GrapplingHook:update(terrain, dt)
         self:reset()
       elseif self.swinging then
         -- Calculate angle
-        self.dAngleDT = self.dAngleDT + dt * 40 * math.cos(self.angle) / (self.length)
+        self.dAngleDT = self.dAngleDT + dt * g * math.cos(self.angle) / self.length + dt * math.sin(self.angle) * self.push / self.length
         self:setAngle(self.angle + dt * self.dAngleDT)
       end
     end

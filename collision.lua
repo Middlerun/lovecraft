@@ -101,4 +101,34 @@ function checkCollisions(terrain, player)
   
   player.oldX = player.x
   player.oldY = player.y
+  
+  local i = 1
+  local max = #terrain.entities
+  while i <= max do
+    local entity = terrain.entities[i]
+    local remove = false
+    
+    if math.abs(player.x - entity.x) < player.width/2 + 0.25 and
+      entity.y < player.y + 0.75 and entity.y > player.y - player.height + 0.25 then
+      if player:give(entity.id) then
+        remove = true
+      end
+    elseif love.timer.getTime() - entity.createTime > 300 then
+      remove = true
+    end
+    if remove then
+      table.remove(terrain.entities, i)
+      max = max - 1
+    else
+      if entity.falling and terrain:getBlock(math.ceil(entity.y), math.ceil(entity.x)) ~= AIR then
+        entity.y = math.floor(entity.y)
+        entity.vy = 0
+        entity.falling = false
+      elseif not entity.falling and terrain:getBlock(math.floor(entity.y) + 1, math.ceil(entity.x)) == AIR then
+        entity.vy = 0
+        entity.falling = true
+      end
+      i = i + 1
+    end
+  end
 end

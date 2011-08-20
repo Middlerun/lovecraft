@@ -14,6 +14,7 @@ function Terrain:new(seed)
   o.rMax = 0
   o.cMin = -2
   o.cMax = 1
+  o.entities = {}
   
   return o
 end
@@ -60,6 +61,12 @@ function Terrain:getBlock(r, c)
   else
     return UNGENERATED
   end
+end
+
+function Terrain:addEntity(id, y, x)
+  if id == nil then return end
+  local entity = Entity:new(id, y, x)
+  table.insert(self.entities, entity)
 end
 
 function Terrain:getSeed()
@@ -157,10 +164,12 @@ function Terrain:draw(view)
   for r = minR, maxR do
     for c = minC, maxC do
       if terrain:hasChunk(r, c) then
-        if terrain:getChunk(r, c).framebuffer == nil then terrain:getChunk(r, c):render() end
-        love.graphics.draw(terrain:getChunk(r, c).framebuffer, (32*c-view.x)*view.zoom + love.graphics.getWidth()/2, (32*r-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/16, view.zoom/16)
+        terrain:getChunk(r, c):draw(view)
       end
     end
+  end
+  for i = 1, #self.entities do
+    self.entities[i]:draw(view)
   end
 end
 
