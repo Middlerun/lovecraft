@@ -108,8 +108,8 @@ function checkCollisions(terrain, player)
     local entity = terrain.entities[i]
     local remove = false
     
-    if math.abs(player.x - entity.x) < player.width/2 + 0.25 and
-      entity.y < player.y + 0.75 and entity.y > player.y - player.height + 0.25 then
+    if math.abs(player.x - entity.x) < player.width/2 + 0.35 and
+      entity.y < player.y + 0.85 and entity.y > player.y - player.height + 0.35 then
       if player:give(entity.id) then
         remove = true
       end

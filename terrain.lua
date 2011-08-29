@@ -118,6 +118,7 @@ function Terrain:checkGenerator()
       end
     end
     chunk.generated = true
+    chunk.hasDirt = chunkNew.hasDirt
     chunk:renderPerlin()
     for r = 0, 1 do
       for c = -1, 1 do
@@ -129,7 +130,7 @@ function Terrain:checkGenerator()
     for r = -1, 1 do
       for c = -1, 1 do
         if self:hasChunk(chunk.r + r, chunk.c + c) then
-          self:getChunk(chunk.r + r, chunk.c + c):render()
+          self:getChunk(chunk.r + r, chunk.c + c).changed = true
         end
       end
     end

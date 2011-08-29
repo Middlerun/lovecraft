@@ -22,37 +22,55 @@ function Chunk:new()
       o.perlin[r][c] = 0
     end
   end
+  o.hasDirt = false
+  o.changed = true
   
   return o
 end
 
 function Chunk:generate(seed, chunkR, chunkC)
-  self.perlin = self:generatePerlin(seed, chunkR, chunkC)
-  
-  local absR
-  local absC
-  
-  self.block = {}
-  for r = 1, 32 do
-    absR = chunkR * 32 + r
-    self.block[r] = {}
-    dirtMargin = (128 - absR) * 0.01
-    for c = 1, 32 do
-      absC = chunkC * 32 + c
-      value = self.perlin[r][c]
-      if absR < 0 then
-        value = value - absR * 0.02
+  if chunkR < -3 then
+    for r = 1, 32 do
+      self.block[r] = {}
+      self.perlin[r] = {}
+      for c = 1, 32 do
+        self.block[r][c] = AIR
+        self.perlin[r][c] = 0
       end
-      
-      if value > 0.5 then self.block[r][c] = AIR
-      elseif value > 1.4 - dirtMargin or value < -0.6 then self.block[r][c] = DIRT
-      else self.block[r][c] = STONE
+    end
+  
+  else
+
+    self.perlin = self:generatePerlin(seed, chunkR, chunkC)
+    
+    local absR
+    local absC
+    
+    self.block = {}
+    for r = 1, 32 do
+      absR = chunkR * 32 + r
+      self.block[r] = {}
+      dirtMargin = (128 - absR) * 0.01
+      for c = 1, 32 do
+        absC = chunkC * 32 + c
+        value = self.perlin[r][c]
+        if absR < 0 then
+          value = value - absR * 0.02
+        end
+        
+        if value > 0.5 then self.block[r][c] = AIR
+        elseif value > 1.4 - dirtMargin or value < -0.6 then
+          self.block[r][c] = DIRT
+          self.hasDirt = true
+        else self.block[r][c] = STONE
+        end
+        
+        if self.block[r][c] == STONE and self.coalNoise[r][c] > 0.08 then self.block[r][c] = COAL_ORE end
       end
-      
-      if self.block[r][c] == STONE and self.coalNoise[r][c] > 0.08 then self.block[r][c] = COAL_ORE end
     end
   end
   self.generated = true
+  self.changed = true
   self.r = chunkR
   self.c = chunkC
 end
@@ -191,14 +209,14 @@ function Chunk:setBlock(r, c, block)
   if r < 1 or r > 32 or c < 1 or c > 32 then
     self.terrain:setBlock(self.r * 32 + r, self.c * 32 + c, block)
     return
-  elseif block ~= AIR and self:getBlock(r+1, c) == GRASS then self:setBlock(r+1, c, DIRT)
+  elseif block ~= AIR and block ~= LEAVES and self:getBlock(r+1, c) == GRASS then self:setBlock(r+1, c, DIRT)
   end
   self.block[r][c] = block
-  self:render()
-  if r == 1  and self.terrain:hasChunk(self.r-1, self.c) then self.terrain:getChunk(self.r-1, self.c):render() end
-  if r == 32 and self.terrain:hasChunk(self.r+1, self.c) then self.terrain:getChunk(self.r+1, self.c):render() end
-  if c == 1  and self.terrain:hasChunk(self.r, self.c-1) then self.terrain:getChunk(self.r, self.c-1):render() end
-  if c == 32 and self.terrain:hasChunk(self.r, self.c+1) then self.terrain:getChunk(self.r, self.c+1):render() end
+  self.changed = true
+  if r == 1  and self.terrain:hasChunk(self.r-1, self.c) then self.terrain:getChunk(self.r-1, self.c).changed = true end
+  if r == 32 and self.terrain:hasChunk(self.r+1, self.c) then self.terrain:getChunk(self.r+1, self.c).changed = true end
+  if c == 1  and self.terrain:hasChunk(self.r, self.c-1) then self.terrain:getChunk(self.r, self.c-1).changed = true end
+  if c == 32 and self.terrain:hasChunk(self.r, self.c+1) then self.terrain:getChunk(self.r, self.c+1).changed = true end
 end
 
 function Chunk:isGenerated()
@@ -229,6 +247,7 @@ function Chunk:render()
     end
   end
   love.graphics.setRenderTarget()
+  self.changed = false
 end
 
 function Chunk:renderPerlin()
@@ -251,7 +270,7 @@ function Chunk:renderPerlin()
 end
 
 function Chunk:generateTrees()
-  if self.treesGenerated then return end
+  if self.treesGenerated or not self.hasDirt or self.r > 1 then return end
   local canGenerate = true
   for r = -1, 0 do
     for c = -1, 1 do
@@ -300,6 +319,6 @@ function Chunk:generateTrees()
 end
 
 function Chunk:draw(view)
-  if self.framebuffer == nil then self:render() end
+  if self.framebuffer == nil or self.changed then self:render() end
   love.graphics.draw(self.framebuffer, (32*self.c-view.x)*view.zoom + love.graphics.getWidth()/2, (32*self.r-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/16, view.zoom/16)
 end
