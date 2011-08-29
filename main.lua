@@ -7,6 +7,7 @@ love.filesystem.load("collision.lua")()
 love.filesystem.load("common.lua")()
 love.filesystem.load("loadgraphics.lua")()
 love.filesystem.load("entity.lua")()
+love.filesystem.load("gameplay.lua")()
 love.filesystem.load("AnAL.lua")()
 love.filesystem.setIdentity("lovecraft")
 
@@ -17,14 +18,19 @@ cursor = {x = 0, y = 0}
 cursorFade = false
 cursorAlpha = 255
 inreach = true
-selected = 1
+selected = {}
+selected.hotbar = 1
+selected.r = 1
+selected.c = 1
 mineBlock = {r = nil, c = nil}
 mineProgress = 0
 placeTime = 0
 instamine = false
 debug = false
 hookRelease = false
+showInventory = false
 g = 40
+pickedItem = {id = nil, count = 0}
 
 
 
@@ -69,25 +75,8 @@ function love.update(dt)
   
   checkCollisions(terrain, player)
   
-  if not player.hook.hooked and love.keyboard.isDown(" ") and not player.falling and not hookRelease then
-    player.falling = true
-    player.vy = -15
-  end
-  if player.hook.hooked then
-    if love.keyboard.isDown("w") then
-      player.hook:shorten(dt)
-    elseif love.keyboard.isDown("s") then
-      player.hook:lengthen(dt)
-    end
-    if love.keyboard.isDown("a") then
-      player.hook.push = 2
-      player.direction = -1
-    elseif love.keyboard.isDown("d") then
-      player.hook.push = -2
-      player.direction = 1
-    else
-      player.hook.push = 0
-    end
+  if showInventory then handleInventoryInput(player)
+  else handleGameplayInput(player, terrain, dt)
   end
   
   view.x = view.x + (player.x - view.x) * 0.2
@@ -99,53 +88,6 @@ function love.update(dt)
     view.y = player.y - (player.y - view.y) * (maxViewDist / viewDist)
   end
   first = false
-  
-  cursor.x = (love.mouse.getX() - love.graphics.getWidth()  / 2) / view.zoom + view.x
-  cursor.y = (love.mouse.getY() - love.graphics.getHeight() / 2) / view.zoom + view.y
-  if love.keyboard.isDown("w") or love.keyboard.isDown("a") or love.keyboard.isDown("s") or love.keyboard.isDown("d") then
-    cursorFade = true
-  end
-  if love.mouse.getX() ~= oldMouse.x or love.mouse.getY() ~= oldMouse.y or love.mouse.isDown("l") or love.mouse.isDown("r") then
-    cursorFade = false
-    cursorAlpha = 255
-  end
-  if cursorFade then cursorAlpha = math.max(0, cursorAlpha - dt * 255 / 5) end
-  oldMouse.x = love.mouse.getX()
-  oldMouse.y = love.mouse.getY()
-  
-  inreach = (pythag(cursor.x, cursor.y, player.x, player.y - player.height/2) < 5)
-  if inreach then
-    local block = terrain:getBlock(math.ceil(cursor.y), math.ceil(cursor.x))
-    if love.mouse.isDown("l") and block ~= AIR and block ~= UNGENERATED then
-      if math.ceil(cursor.x) == mineBlock.c and math.ceil(cursor.y) == mineBlock.r then
-        mineProgress = mineProgress + dt / durability[block]
-        if mineProgress >= 1 or instamine then
-          terrain:setBlock(math.ceil(cursor.y), math.ceil(cursor.x), AIR)
-          mineProgress = 0
-          mineBlock.r = nil
-          mineBlock.c = nil
-          terrain:addEntity(breakGive[block], math.ceil(cursor.y), math.ceil(cursor.x) - 0.5 - rand:num())
-        end
-      else
-        mineBlock.r = math.ceil(cursor.y)
-        mineBlock.c = math.ceil(cursor.x)
-        mineProgress = dt / durability[block]
-      end
-    elseif love.mouse.isDown("r") and block == AIR and placeTime > 0.2 then
-      local x = math.ceil(cursor.x)
-      local y = math.ceil(cursor.y)
-      if x - 1 >= player.x + player.width / 2 or x <= player.x - player.width / 2
-      or y - 1 >= player.y or y <= player.y - player.height then
-        if player:checkSlot(selected) then
-          terrain:setBlock(y, x, player:takeSlot(selected))
-          placeTime = 0
-        end
-      end
-      mineProgress = 0
-    else
-      mineProgress = 0
-    end
-  end
   
   placeTime = placeTime + dt
   player.walk:update(dt)
@@ -172,7 +114,8 @@ function love.draw()
   player:draw(view)
   
   love.graphics.setColor(0, 0, 0, cursorAlpha)
-  if inreach then
+  if inreach and not showInventory then
+    love.graphics.setLine(view.zoom/32, "rough")
     love.graphics.rectangle("line", (math.ceil(cursor.x)-1-view.x)*view.zoom + love.graphics.getWidth()/2, (math.ceil(cursor.y)-1-view.y)*view.zoom+love.graphics.getHeight()/2, view.zoom, view.zoom)
   end
   
@@ -180,16 +123,22 @@ function love.draw()
     love.graphics.draw(breakImage[math.ceil(mineProgress * 8)], (mineBlock.c-1-view.x)*view.zoom + love.graphics.getWidth()/2, (mineBlock.r-1-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/16, view.zoom/16)
   end
   
-  love.graphics.setColor(255, 255, 255, 255)
-  love.graphics.draw(hotbar, love.graphics.getWidth()/2 - hotbar:getWidth()/2, love.graphics.getHeight() - hotbar:getHeight())
-  love.graphics.draw(highlight, love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 20 + 54 * (selected - 1), love.graphics.getHeight() - hotbar:getHeight() + 8)
-  for i = 1, 9 do
-    if player.hotbar[i].id ~= nil then
-      local base = tileBase(player.hotbar[i].id)
-      if base ~= nil then love.graphics.draw(images[base][1], love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 39 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 26, 0, 1, 1, images[player.hotbar[i].id][1]:getWidth()/2, images[player.hotbar[i].id][1]:getHeight()/2) end
-      love.graphics.draw(images[player.hotbar[i].id][1], love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 39 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 26, 0, 1, 1, images[player.hotbar[i].id][1]:getWidth()/2, images[player.hotbar[i].id][1]:getHeight()/2)
-      love.graphics.print(player.hotbar[i].count, love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 50 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 35)
+  if showInventory then
+    player:drawInventory(selected)
+    if pickedItem.id ~= nil then
+      love.mouse.setVisible(false)
+      local x = love.mouse.getX()
+      local y = love.mouse.getY()
+      love.graphics.setColor(255, 255, 255, 255)
+      local base = tileBase(pickedItem.id)
+      if base ~= nil then love.graphics.draw(images[base][1], x, y, 0, 1, 1, images[pickedItem.id][1]:getWidth()/2, images[pickedItem.id][1]:getHeight()/2) end
+      love.graphics.draw(images[pickedItem.id][1], x, y, 0, 1, 1, images[pickedItem.id][1]:getWidth()/2, images[pickedItem.id][1]:getHeight()/2)
+      love.graphics.print(pickedItem.count, x + 11, y + 9)
+    else
+      love.mouse.setVisible(true)
     end
+  else
+    player:drawHotbar(selected.hotbar)
   end
   
   if debug then
@@ -201,25 +150,36 @@ end
 
 
 function love.keypressed(k, u)
+  if showInventory then
+    if k == "escape" and pickedItem.id == nil then
+      showInventory = false
+    end
+  else
+    if k == "escape" then
+      generator:send("command", "quit")
+      generator:wait()
+      love.event.push("q")
+    elseif k == " " then
+      if player.hook.fired then
+        player.hook:reset()
+        hookRelease = true
+      end
+    end
+  end
+  
   if k == "p" then
-    showPerlin = not showPerlin
-  elseif k == "escape" then
-    generator:send("command", "quit")
-    generator:wait()
-    love.event.push("q")
+    --showPerlin = not showPerlin
+  elseif k == "f3" then
+    debug = not debug
+    instamine = debug
+  elseif k == "e" and pickedItem.id == nil then
+    showInventory = not showInventory
   elseif k == "[" then
     if view.zoom > 1 then view.zoom = view.zoom / 2 end
   elseif k == "]" then
     if view.zoom < 256 then view.zoom = view.zoom * 2 end
-  elseif k == "f3" then
-    debug = not debug
-    instamine = debug
-  elseif k == " " then
-    if player.hook.fired then
-      player.hook:reset()
-      hookRelease = true
-    end
   end
+  
 end
 
 
@@ -233,14 +193,24 @@ end
 
 
 function love.mousepressed(x, y, button)
-  if button == "m" then
-    player.hook:fire(player.x, player.y - player.height/2, cursor.x - player.x, cursor.y - (player.y - player.height/2))
-  elseif button == "wd" then
-    selected = selected + 1
-    if selected == 10 then selected = 1 end
-  elseif button == "wu" then
-    selected = selected - 1
-    if selected == 0 then selected = 9 end
+  if showInventory then
+    if selected.r ~= nil and selected.c ~= nil then
+      if button == "l" then
+        local tempItem = player:takeSlot(selected.r, selected.c, player:checkSlot(selected.r, selected.c).count)
+        player:setSlot(selected.r, selected.c, pickedItem)
+        pickedItem = tempItem
+      end
+    end
+  else
+    if button == "m" then
+      player.hook:fire(player.x, player.y - player.height/2, cursor.x - player.x, cursor.y - (player.y - player.height/2))
+    elseif button == "wd" then
+      selected.hotbar = selected.hotbar + 1
+      if selected.hotbar == 10 then selected.hotbar = 1 end
+    elseif button == "wu" then
+      selected.hotbar = selected.hotbar - 1
+      if selected.hotbar == 0  then selected.hotbar = 9 end
+    end
   end
 end
 

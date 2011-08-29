@@ -188,5 +188,6 @@ end
 function GrapplingHook:draw(view, x, y)
   if not self.fired then return end
   love.graphics.setColor(0, 0, 0, 255)
+  love.graphics.setLine(view.zoom/16, "smooth")
   love.graphics.line((x-view.x)*view.zoom + love.graphics.getWidth()/2, (y-view.y)*view.zoom + love.graphics.getHeight()/2, (self.x-view.x)*view.zoom  + love.graphics.getWidth()/2, (self.y-view.y)*view.zoom  + love.graphics.getHeight()/2)
 end

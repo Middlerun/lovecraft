@@ -8,11 +8,13 @@
 A game by Middlerun
 http://www.middlerun.net
 
-A 2D Minecraft-style game.
+Lövecraft is a 2D mining and building sim in the vein of Minecraft and
+Terraria.
 
 Controls:
 Move left:           A
 Move right:          D
+Open inventory:      E
 Break block:         Left mouse
 Place block:         Right mouse
 Select block:        Scroll wheel
@@ -24,15 +26,20 @@ Lengthen hook line:  S
 
 Requires LÖVE 0.7.2. See http://www.love2d.org for more info.
 
+Lövecraft is currently in a very early stage of development. The current
+version can always be found at https://github.com/Middlerun/lovecraft
+
+Despite the name, it has nothing to do with the works of H.P. Lovecraft. I'll
+rename it to something less misleading when I think of a good name.
+
 
 To do:
 ------
 
-- Fix grappling hook bugs
-- Tools and items
-- Inventory management system
-- More block types
 - Crafting
+- Tools and items
+- More block types
+- Fix grappling hook bugs
 - Music and sound effects
 - Menu screen
 - Save/load system
@@ -49,7 +56,7 @@ Credits, attributions and other rubbish:
 Made with the LÖVE framework
 http://www.love2d.org
 
-Inspired by Minecraft and Terraria.
+Inspired by Minecraft, Terraria and the Worms games.
 
 Assets used under Creative Commons license:
 Cobblestone graphics by Arachne

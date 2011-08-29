@@ -33,10 +33,14 @@ function Player:new()
   o.direction = 1
   o.hook = GrapplingHook:new(o)
   o.landTime = 0
-  o.hotbar = {}
-  for i = 1, 9 do
-    o.hotbar[i] = {}
+  o.inventory = {}
+  for r = 1, 4 do
+    o.inventory[r] = {}
+    for c = 1, 9 do
+      o.inventory[r][c] = {}
+    end
   end
+  o.hotbar = o.inventory[4]
   
   return o
 end
@@ -44,41 +48,53 @@ end
 function Player:give(thing)
   if thing == nil then return false end
   
-  for i = 1, 9 do
-    if self.hotbar[i].id == thing and self.hotbar[i].count ~= nil and self.hotbar[i].count < 64 then
-      self.hotbar[i].count = self.hotbar[i].count + 1
-      return true
+  for r = 4, 1, -1 do
+    for c = 1, 9 do
+      if self.inventory[r][c].id == thing and self.inventory[r][c].count ~= nil and self.inventory[r][c].count < 64 then
+        self.inventory[r][c].count = self.inventory[r][c].count + 1
+        return true
+      end
     end
   end
-  for i = 1, 9 do
-    if self.hotbar[i].id == nil then
-      self.hotbar[i].id = thing
-      self.hotbar[i].count = 1
-      return true
+  for r = 4, 1, -1 do
+    for c = 1, 9 do
+      if self.inventory[r][c].id == nil then
+        self.inventory[r][c].id = thing
+        self.inventory[r][c].count = 1
+        return true
+      end
     end
   end
   return false
 end
 
-function Player:takeSlot(slot)
-  assert (slot ~= nil)
-  assert (slot >= 1)
-  assert (slot <= 9)
-  if self.hotbar[slot].id == nil or self.hotbar[slot].count == nil or self.hotbar[slot].count <= 0 then return nil
+function Player:takeSlot(r, c, count)
+  assert (r ~= nil and c ~= nil)
+  assert (r >= 1 and r <= 4)
+  assert (c >= 1 and c <= 9)
+  if count == nil then count = 1 end
+  if self.inventory[r][c].id == nil or self.inventory[r][c].count == nil or self.inventory[r][c].count - count < 0 then return {id = nil, count = 0}
   else
-    self.hotbar[slot].count = self.hotbar[slot].count - 1
-    local id = self.hotbar[slot].id
-    if self.hotbar[slot].count == 0 then self.hotbar[slot].id = nil end
-    return id
+    self.inventory[r][c].count = self.inventory[r][c].count - count
+    local id = self.inventory[r][c].id
+    if self.inventory[r][c].count == 0 then self.inventory[r][c].id = nil end
+    return {id = id, count = count}
   end
 end
 
-function Player:checkSlot(slot)
-  assert (slot ~= nil)
-  assert (slot >= 1)
-  assert (slot <= 9)
-  if self.hotbar[slot].id == nil or self.hotbar[slot].count == nil or self.hotbar[slot].count <= 0 then return nil
-  else return self.hotbar[slot].id end
+function Player:setSlot(r, c, stuff)
+  assert (r ~= nil and c ~= nil)
+  assert (r >= 1 and r <= 4)
+  assert (c >= 1 and c <= 9)
+  self.inventory[r][c] = stuff
+end
+
+function Player:checkSlot(r, c)
+  assert (r ~= nil and c ~= nil)
+  assert (r >= 1 and r <= 4)
+  assert (c >= 1 and c <= 9)
+  if self.inventory[r][c].id == nil or self.inventory[r][c].count == nil or self.inventory[r][c].count <= 0 then return {id = nil, count = 0}
+  else return {id = self.inventory[r][c].id, count = self.inventory[r][c].count} end
 end
 
 function Player:update(dt)
@@ -90,22 +106,22 @@ function Player:update(dt)
   else
     if self.falling and not self.hook.hooked then
       self.vy = self.vy + g * dt
-      if     love.keyboard.isDown("a") and not self.againstLeftWall  then
+      if     love.keyboard.isDown("a") and not self.againstLeftWall  and not showInventory then
         self.vx = math.max(-8, self.vx - 16 * dt)
         self.direction = -1
         self.landTime = 0
-      elseif love.keyboard.isDown("d") and not self.againstRightWall then
+      elseif love.keyboard.isDown("d") and not self.againstRightWall and not showInventory then
         self.vx = math.min( 8, self.vx + 16 * dt)
         self.direction = 1
         self.landTime = 0
       end
     end
     if not first and not self.falling and not self.hook.hooked then
-      if     love.keyboard.isDown("a") and not self.againstLeftWall  then
+      if     love.keyboard.isDown("a") and not self.againstLeftWall  and not showInventory then
         self.vx = math.max(-8, self.vx - 36 * dt)
         self.direction = -1
         self.landTime = 0
-      elseif love.keyboard.isDown("d") and not self.againstRightWall then
+      elseif love.keyboard.isDown("d") and not self.againstRightWall and not showInventory then
         self.vx = math.min( 8, self.vx + 36 * dt)
         self.direction = 1
         self.landTime = 0
@@ -116,7 +132,7 @@ function Player:update(dt)
     self.x = self.x + self.vx * dt
     self.y = self.y + self.vy * dt
     
-    if not self.falling and math.abs(self.vx) > 0.5 and (love.keyboard.isDown("a") or love.keyboard.isDown("d")) then
+    if not self.falling and math.abs(self.vx) > 0.5 and (love.keyboard.isDown("a") or love.keyboard.isDown("d")) and not showInventory then
       if not self.walking then self.walk:seek(5) end
       self.walking = true
     else
@@ -140,5 +156,52 @@ function Player:draw(view)
     love.graphics.draw(self.land,  (self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom + love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
   else
     love.graphics.draw(self.stand, (self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom + love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
+  end
+end
+
+function Player:drawHotbar(selected)
+  love.graphics.setColor(255, 255, 255, 255)
+  love.graphics.draw(hotbar, love.graphics.getWidth()/2 - hotbar:getWidth()/2, love.graphics.getHeight() - hotbar:getHeight())
+  love.graphics.draw(highlight, love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 20 + 54 * (selected - 1), love.graphics.getHeight() - hotbar:getHeight() + 8)
+  
+  for i = 1, 9 do
+    if player.hotbar[i].id ~= nil then
+      local base = tileBase(player.hotbar[i].id)
+      if base ~= nil then love.graphics.draw(images[base][1], love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 39 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 26, 0, 1, 1, images[player.hotbar[i].id][1]:getWidth()/2, images[player.hotbar[i].id][1]:getHeight()/2) end
+      love.graphics.draw(images[player.hotbar[i].id][1], love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 39 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 26, 0, 1, 1, images[player.hotbar[i].id][1]:getWidth()/2, images[player.hotbar[i].id][1]:getHeight()/2)
+      love.graphics.print(player.hotbar[i].count, love.graphics.getWidth()/2 - hotbar:getWidth()/2 + 50 + 54 * (i - 1), love.graphics.getHeight() - hotbar:getHeight() + 35)
+    end
+  end
+end
+
+function Player:drawInventory(selected)
+  love.graphics.setColor(0, 0, 0, 128)
+  love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+  love.graphics.setColor(255, 255, 255, 255)
+  love.graphics.draw(inventory, love.graphics.getWidth()/2 - inventory:getWidth()/2, love.graphics.getHeight()/2 - inventory:getHeight()/2)
+  if selected.r == nil or selected.c == nil then
+    -- Do nothing
+  elseif selected.r >= 1 and selected.r <= 3 then
+    love.graphics.draw(highlight, love.graphics.getWidth()/2 - inventory:getWidth()/2 + 20 + 54 * (selected.c - 1), love.graphics.getHeight()/2 - inventory:getHeight()/2 + 224 + 52 * (selected.r - 1))
+  elseif selected.r == 4 then
+    love.graphics.draw(highlight, love.graphics.getWidth()/2 - inventory:getWidth()/2 + 20 + 54 * (selected.c - 1), love.graphics.getHeight()/2 - inventory:getHeight()/2 + 404)
+  end
+  
+  local offsetY
+  for r = 1, 4 do
+    if r < 4 then offsetY = 242 + 52 * (r - 1)
+    else offsetY = 422
+    end
+    for c = 1, 9 do
+      if player.inventory[r][c].id ~= nil then
+        local base = tileBase(player.inventory[r][c].id)
+        
+        if base ~= nil then love.graphics.draw(images[base][1], love.graphics.getWidth()/2 - inventory:getWidth()/2 + 39 + 54 * (c - 1), love.graphics.getHeight()/2 - inventory:getHeight()/2 + offsetY, 0, 1, 1, images[player.inventory[r][c].id][1]:getWidth()/2, images[player.inventory[r][c].id][1]:getHeight()/2) end
+        
+        love.graphics.draw(images[player.inventory[r][c].id][1], love.graphics.getWidth()/2 - inventory:getWidth()/2 + 39 + 54 * (c - 1), love.graphics.getHeight()/2 - inventory:getHeight()/2 + offsetY, 0, 1, 1, images[player.inventory[r][c].id][1]:getWidth()/2, images[player.inventory[r][c].id][1]:getHeight()/2)
+        
+        love.graphics.print(player.inventory[r][c].count, love.graphics.getWidth()/2 - inventory:getWidth()/2 + 50 + 54 * (c - 1), love.graphics.getHeight()/2 - inventory:getHeight()/2 + offsetY + 9)
+      end
+    end
   end
 end

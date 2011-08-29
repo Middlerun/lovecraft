@@ -110,13 +110,7 @@ function Terrain:checkGenerator()
   if chunk ~= nil then
     chunkNew = TSerial.unpack(chunk)
     chunk = self:getChunk(chunkNew.r, chunkNew.c)
-    for r = 1, 32 do
-      for c = 1, 32 do
-        chunk.block[r][c] = chunkNew.block[r][c]
-        chunk.perlin[r][c] = chunkNew.perlin[r][c]
-        chunk.coalNoise[r][c] = chunkNew.coalNoise[r][c]
-      end
-    end
+    chunk.block = chunkNew.block
     chunk.generated = true
     chunk.hasDirt = chunkNew.hasDirt
     chunk:renderPerlin()

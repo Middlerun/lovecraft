@@ -69,6 +69,7 @@ function Chunk:generate(seed, chunkR, chunkC)
       end
     end
   end
+  self.perlin = {}
   self.generated = true
   self.changed = true
   self.r = chunkR
