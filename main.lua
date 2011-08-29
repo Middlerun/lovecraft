@@ -195,10 +195,36 @@ end
 function love.mousepressed(x, y, button)
   if showInventory then
     if selected.r ~= nil and selected.c ~= nil then
-      if button == "l" then
+      if button == "l" and player:checkSlot(selected.r, selected.c).id == pickedItem.id then
+        if player:checkSlot(selected.r, selected.c).count + pickedItem.count <= 64 then
+          player:setSlot(selected.r, selected.c, {id = pickedItem.id, count = player:checkSlot(selected.r, selected.c).count + pickedItem.count})
+          pickedItem = {id = nil, count = 0}
+        else
+          pickedItem.count = player:checkSlot(selected.r, selected.c).count + pickedItem.count - 64
+          player:setSlot(selected.r, selected.c, {id = pickedItem.id, count = 64})
+        end
+      elseif button == "l" then
         local tempItem = player:takeSlot(selected.r, selected.c, player:checkSlot(selected.r, selected.c).count)
         player:setSlot(selected.r, selected.c, pickedItem)
         pickedItem = tempItem
+      elseif button == "r" and pickedItem.id == nil then
+        pickedItem = player:takeSlot(selected.r, selected.c, math.ceil(player:checkSlot(selected.r, selected.c).count/2))
+      elseif button == "r" then
+        if player:checkSlot(selected.r, selected.c).id == nil then
+          player:setSlot(selected.r, selected.c, {id = pickedItem.id, count = 1})
+          pickedItem.count = pickedItem.count - 1
+          if pickedItem.count == 0 then pickedItem.id = nil end
+        elseif player:checkSlot(selected.r, selected.c).id == pickedItem.id then
+          if player:checkSlot(selected.r, selected.c).count < 64 then
+            player:setSlot(selected.r, selected.c, {id = pickedItem.id, count = player:checkSlot(selected.r, selected.c).count + 1})
+            pickedItem.count = pickedItem.count - 1
+            if pickedItem.count == 0 then pickedItem.id = nil end
+          end
+        else
+          local tempItem = player:takeSlot(selected.r, selected.c, player:checkSlot(selected.r, selected.c).count)
+          player:setSlot(selected.r, selected.c, pickedItem)
+          pickedItem = tempItem
+        end
       end
     end
   else
