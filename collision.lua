@@ -110,7 +110,7 @@ function checkCollisions(terrain, player)
     
     if math.abs(player.x - entity.x) < player.width/2 + 0.35 and
       entity.y < player.y + 0.85 and entity.y > player.y - player.height + 0.35 then
-      if player:give(entity.id) then
+      if player.inventory:give(entity.id) then
         remove = true
       end
     elseif love.timer.getTime() - entity.createTime > 300 then

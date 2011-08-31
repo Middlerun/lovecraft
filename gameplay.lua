@@ -57,8 +57,8 @@ function handleGameplayInput(player, terrain, dt)
       local y = math.ceil(cursor.y)
       if x - 1 >= player.x + player.width / 2 or x <= player.x - player.width / 2
       or y - 1 >= player.y or y <= player.y - player.height then
-        if player:checkSlot(4, selected.hotbar).id then
-          terrain:setBlock(y, x, player:takeSlot(4, selected.hotbar).id)
+        if player.inventory:checkSlot(4, selected.hotbar).id then
+          terrain:setBlock(y, x, player.inventory:takeSlot(4, selected.hotbar).id)
           placeTime = 0
         end
       end
@@ -82,10 +82,10 @@ function handleInventoryInput(player)
       offsetY = 396
     end
     for c = 1, 9 do
-      if x >= love.graphics.getWidth()/2 - inventory:getWidth()/2 + 12 + 54 * (c - 1) and
-         x <= love.graphics.getWidth()/2 - inventory:getWidth()/2 + 66 + 54 * (c - 1) and
-         y >= love.graphics.getHeight()/2 - inventory:getHeight()/2 + offsetY and
-         y <= love.graphics.getHeight()/2 - inventory:getHeight()/2 + offsetY + 52 then
+      if x >= love.graphics.getWidth()/2  - inventoryGraphic:getWidth()/2 + 12 + 54 * (c - 1) and
+         x <= love.graphics.getWidth()/2  - inventoryGraphic:getWidth()/2 + 66 + 54 * (c - 1) and
+         y >= love.graphics.getHeight()/2 - inventoryGraphic:getHeight()/2 + offsetY and
+         y <= love.graphics.getHeight()/2 - inventoryGraphic:getHeight()/2 + offsetY + 52 then
         selected.r = r
         selected.c = c
       end

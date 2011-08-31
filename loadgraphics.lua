@@ -65,5 +65,5 @@ genChunk:setFilter("linear", "nearest")
 sky = love.graphics.newImage("gfx/sky.png")
 
 hotbar = love.graphics.newImage("gfx/hotbar.png")
-inventory = love.graphics.newImage("gfx/inventory.png")
+inventoryGraphic = love.graphics.newImage("gfx/inventory.png")
 highlight = love.graphics.newImage("gfx/highlight.png")
