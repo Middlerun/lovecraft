@@ -179,6 +179,8 @@ function love.keypressed(k, u)
     if view.zoom > 1 then view.zoom = view.zoom / 2 end
   elseif k == "]" then
     if view.zoom < 256 then view.zoom = view.zoom * 2 end
+  elseif k == "g" then
+    player.hook:fire(player.x, player.y - player.height/2, cursor.x - player.x, cursor.y - (player.y - player.height/2))
   end
   
 end
