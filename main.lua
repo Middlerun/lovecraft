@@ -253,6 +253,7 @@ function pythag(x1, y1, x2, y2)
   return math.sqrt((x1-x2)^2 + (y1-y2)^2)
 end
 
+
 function love.quit()
   --This will be printed to the console on quit
     
