@@ -53,6 +53,12 @@ for i = 1, 16 do
   images[LEAVES][i]:setFilter("linear", "nearest")
 end
 
+
+
+images[WOOD_SHOVEL] = love.graphics.newImage("gfx/items/woodShovel.png")
+
+
+
 breakImage = {}
 for i = 1, 8 do
   breakImage[i] = love.graphics.newImage("gfx/tiles/break" .. i .. ".png")

@@ -38,8 +38,9 @@ function handleGameplayInput(player, terrain, dt)
   if inreach then
     local block = terrain:getBlock(math.ceil(cursor.y), math.ceil(cursor.x))
     if love.mouse.isDown("l") and block ~= AIR and block ~= UNGENERATED then
+      tool = player.inventory:checkCurrent().id
       if math.ceil(cursor.x) == mineBlock.c and math.ceil(cursor.y) == mineBlock.r then
-        mineProgress = mineProgress + dt / durability[block]
+        mineProgress = mineProgress + mineSpeedMultiplier(block, tool) * dt / durability[block]
         if mineProgress >= 1 or instamine then
           terrain:setBlock(math.ceil(cursor.y), math.ceil(cursor.x), AIR)
           mineProgress = 0
@@ -50,15 +51,15 @@ function handleGameplayInput(player, terrain, dt)
       else
         mineBlock.r = math.ceil(cursor.y)
         mineBlock.c = math.ceil(cursor.x)
-        mineProgress = dt / durability[block]
+        mineProgress = dt / mineSpeedMultiplier(block, tool) * durability[block]
       end
     elseif love.mouse.isDown("r") and block == AIR and placeTime > 0.2 then
       local x = math.ceil(cursor.x)
       local y = math.ceil(cursor.y)
       if x - 1 >= player.x + player.width / 2 or x <= player.x - player.width / 2
       or y - 1 >= player.y or y <= player.y - player.height then
-        if player.inventory:checkSlot(4, selected.hotbar).id then
-          terrain:setBlock(y, x, player.inventory:takeSlot(4, selected.hotbar).id)
+        if player.inventory:checkCurrent().id < 1000 then
+          terrain:setBlock(y, x, player.inventory:takeCurrent().id)
           placeTime = 0
         end
       end
@@ -73,8 +74,8 @@ function handleInventoryInput(player)
   local x = love.mouse.getX()
   local y = love.mouse.getY()
   local offsetY
-  selected.r = nil
-  selected.c = nil
+  player.inventory.selected.r = nil
+  player.inventory.selected.c = nil
   for r = 1, 4 do
     if r < 4 then
       offsetY = 216 + 52 * (r - 1)
@@ -86,8 +87,8 @@ function handleInventoryInput(player)
          x <= love.graphics.getWidth()/2  - inventoryGraphic:getWidth()/2 + 66 + 54 * (c - 1) and
          y >= love.graphics.getHeight()/2 - inventoryGraphic:getHeight()/2 + offsetY and
          y <= love.graphics.getHeight()/2 - inventoryGraphic:getHeight()/2 + offsetY + 52 then
-        selected.r = r
-        selected.c = c
+        player.inventory.selected.r = r
+        player.inventory.selected.c = c
       end
     end
   end

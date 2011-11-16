@@ -14,6 +14,37 @@ WOOD = 17
 LEAVES = 18
 UNGENERATED = 255
 
+-- Item codes
+WOOD_SHOVEL = 1011
+WOOD_PICKAXE = 1012
+WOOD_AXE = 1013
+WOOD_SWORD = 1014
+STONE_SHOVEL = 1021
+STONE_PICKAXE = 1022
+STONE_AXE = 1023
+STONE_SWORD = 1024
+
+-- Tool type codes
+SHOVEL = 1
+PICKAXE = 2
+AXE = 3
+SWORD = 4
+NO_TOOL = 9
+
+-- Tool material codes
+WOOD_TOOL = 1
+STONE_TOOL = 2
+COPPER_TOOL = 3
+IRON_TOOL = 4
+
+function toolInfo(item)
+  if item == nil or item <= 1000 or item >= 2000 then return 9, nil end
+  item = item - 1000
+  toolType = item % 10
+  toolMaterial = (item - toolType) / 10
+  return toolType, toolMaterial
+end
+
 durability = {}
 durability[STONE] = 2
 durability[GRASS] = 1
@@ -22,6 +53,23 @@ durability[COBBLESTONE] = 2
 durability[COAL_ORE] = 3
 durability[WOOD] = 1.5
 durability[LEAVES] = 0.3
+
+function mineSpeedMultiplier(block, tool)
+  toolType, toolMaterial = toolInfo(tool)
+  if (block == STONE or block == COBBLESTONE or block == COAL_ORE) and toolType == PICKAXE then
+    multiplier = 1.5
+  elseif (block == GRASS or block == DIRT) and toolType == SHOVEL then
+    multiplier = 2
+  elseif (block == WOOD or block == LEAVES) and toolType == AXE then
+    multiplier = 1.5
+  else
+    return 1
+  end
+  if toolMaterial == STONE_TOOL then multiplier = multiplier * 1.3 end
+  if toolMaterial == COPPER_TOOL then multiplier = multiplier * 1.5 end
+  if toolMaterial == IRON_TOOL then multiplier = multiplier * 1.6 end
+  return multiplier
+end
 
 breakGive = {}
 breakGive[STONE] = COBBLESTONE

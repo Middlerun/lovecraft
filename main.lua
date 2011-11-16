@@ -19,10 +19,6 @@ cursor = {x = 0, y = 0}
 cursorFade = false
 cursorAlpha = 255
 inreach = true
-selected = {}
-selected.hotbar = 1
-selected.r = 1
-selected.c = 1
 mineBlock = {r = nil, c = nil}
 mineProgress = 0
 placeTime = 0
@@ -31,7 +27,6 @@ debug = false
 hookRelease = false
 showInventory = false
 g = 40
-pickedItem = {id = nil, count = 0}
 
 
 
@@ -54,6 +49,8 @@ function love.load()
   view.x = player.x
   view.y = player.y - player.height / 2
   first = true
+  
+  player.inventory:give(WOOD_SHOVEL) -- Just temporary, for testing
 end
 
 
@@ -125,21 +122,9 @@ function love.draw()
   end
   
   if showInventory then
-    player.inventory:draw(selected)
-    if pickedItem.id ~= nil then
-      love.mouse.setVisible(false)
-      local x = love.mouse.getX()
-      local y = love.mouse.getY()
-      love.graphics.setColor(255, 255, 255, 255)
-      local base = tileBase(pickedItem.id)
-      if base ~= nil then love.graphics.draw(images[base][1], x, y, 0, 1, 1, images[pickedItem.id][1]:getWidth()/2, images[pickedItem.id][1]:getHeight()/2) end
-      love.graphics.draw(images[pickedItem.id][1], x, y, 0, 1, 1, images[pickedItem.id][1]:getWidth()/2, images[pickedItem.id][1]:getHeight()/2)
-      love.graphics.print(pickedItem.count, x + 11, y + 9)
-    else
-      love.mouse.setVisible(true)
-    end
+    player.inventory:draw()
   else
-    player.inventory:drawHotbar(selected.hotbar)
+    player.inventory:drawHotbar()
   end
   
   if debug then
@@ -152,7 +137,7 @@ end
 
 function love.keypressed(k, u)
   if showInventory then
-    if k == "escape" and pickedItem.id == nil then
+    if k == "escape" and player.inventory.pickedItem.id == nil then
       showInventory = false
     end
   else
@@ -173,7 +158,7 @@ function love.keypressed(k, u)
   elseif k == "f3" then
     debug = not debug
     instamine = debug
-  elseif k == "e" and pickedItem.id == nil then
+  elseif k == "e" and player.inventory.pickedItem.id == nil then
     showInventory = not showInventory
   elseif k == "[" then
     if view.zoom > 1 then view.zoom = view.zoom / 2 end
@@ -197,48 +182,14 @@ end
 
 function love.mousepressed(x, y, button)
   if showInventory then
-    if selected.r ~= nil and selected.c ~= nil then
-      if button == "l" and player.inventory:checkSlot(selected.r, selected.c).id == pickedItem.id then
-        if player.inventory:checkSlot(selected.r, selected.c).count + pickedItem.count <= 64 then
-          player.inventory:setSlot(selected.r, selected.c, {id = pickedItem.id, count = player.inventory:checkSlot(selected.r, selected.c).count + pickedItem.count})
-          pickedItem = {id = nil, count = 0}
-        else
-          pickedItem.count = player.inventory:checkSlot(selected.r, selected.c).count + pickedItem.count - 64
-          player.inventory:setSlot(selected.r, selected.c, {id = pickedItem.id, count = 64})
-        end
-      elseif button == "l" then
-        local tempItem = player.inventory:takeSlot(selected.r, selected.c, player.inventory:checkSlot(selected.r, selected.c).count)
-        player.inventory:setSlot(selected.r, selected.c, pickedItem)
-        pickedItem = tempItem
-      elseif button == "r" and pickedItem.id == nil then
-        pickedItem = player.inventory:takeSlot(selected.r, selected.c, math.ceil(player.inventory:checkSlot(selected.r, selected.c).count/2))
-      elseif button == "r" then
-        if player.inventory:checkSlot(selected.r, selected.c).id == nil then
-          player.inventory:setSlot(selected.r, selected.c, {id = pickedItem.id, count = 1})
-          pickedItem.count = pickedItem.count - 1
-          if pickedItem.count == 0 then pickedItem.id = nil end
-        elseif player.inventory:checkSlot(selected.r, selected.c).id == pickedItem.id then
-          if player.inventory:checkSlot(selected.r, selected.c).count < 64 then
-            player.inventory:setSlot(selected.r, selected.c, {id = pickedItem.id, count = player.inventory:checkSlot(selected.r, selected.c).count + 1})
-            pickedItem.count = pickedItem.count - 1
-            if pickedItem.count == 0 then pickedItem.id = nil end
-          end
-        else
-          local tempItem = player.inventory:takeSlot(selected.r, selected.c, player.inventory:checkSlot(selected.r, selected.c).count)
-          player.inventory:setSlot(selected.r, selected.c, pickedItem)
-          pickedItem = tempItem
-        end
-      end
-    end
+    player.inventory:handleInput(button)
   else
     if button == "m" then
       player.hook:fire(player.x, player.y - player.height/2, cursor.x - player.x, cursor.y - (player.y - player.height/2))
     elseif button == "wd" then
-      selected.hotbar = selected.hotbar + 1
-      if selected.hotbar == 10 then selected.hotbar = 1 end
+      player.inventory:selectNext()
     elseif button == "wu" then
-      selected.hotbar = selected.hotbar - 1
-      if selected.hotbar == 0  then selected.hotbar = 9 end
+      player.inventory:selectPrev()
     end
   end
 end
