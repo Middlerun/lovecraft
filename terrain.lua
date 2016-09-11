@@ -6,7 +6,7 @@ function Terrain:new(seed)
   local o = {}
   setmetatable(o, self)
   self.__index = self
-  
+
   o.seed = seed or os.time()
   o.chunk = {}
   o.generationQueue = {}
@@ -15,7 +15,7 @@ function Terrain:new(seed)
   o.cMin = -2
   o.cMax = 1
   o.entities = {}
-  
+
   return o
 end
 
@@ -95,7 +95,7 @@ function Terrain:generateInitial()
       end
     end
   end
-  
+
 end
 
 function Terrain:calculateSunLight()
@@ -109,7 +109,7 @@ function Terrain:calculateSunLight()
       end
     end
     if top >= 0 then break end
-    
+
     for c2 = 1, 32 do
       local carry = false
       if self:getChunk(r, c):getBlock(1, c2) == AIR then carry = true end
@@ -131,8 +131,8 @@ function Terrain:calculateSunLight()
       end
     end
   end
-  
-  
+
+
 end
 
 function Terrain:generate(r, c)
@@ -144,7 +144,10 @@ function Terrain:generate(r, c)
 end
 
 function Terrain:checkGenerator()
-  local chunk = generator:receive("chunk")
+  local chunk_channel = love.thread.getChannel('generator_chunk')
+  local command_channel = love.thread.getChannel('generator_command')
+
+  local chunk = chunk_channel:pop()
   if chunk ~= nil then
     chunkNew = TSerial.unpack(chunk)
     chunk = self:getChunk(chunkNew.r, chunkNew.c)
@@ -167,13 +170,13 @@ function Terrain:checkGenerator()
       end
     end
   end
-  if generator:peek("ready") then
-    local chunkRC = table.remove(self.generationQueue, 1)
-    if chunkRC ~= nil then
-      local command = {seed = self:getSeed(), r = chunkRC.r, c = chunkRC.c}
-      generator:send("command", TSerial.pack(command))
-    end
+
+  local chunkRC = table.remove(self.generationQueue, 1)
+  if chunkRC ~= nil then
+    local command = {seed = self:getSeed(), r = chunkRC.r, c = chunkRC.c}
+    command_channel:push(TSerial.pack(command))
   end
+  --end
 end
 
 function Terrain:draw(view)
@@ -188,7 +191,7 @@ function Terrain:draw(view)
   end
   love.graphics.setColor(255, 255, 255, 255)
   love.graphics.draw(sky, -1, skyPos, 0, (love.graphics.getWidth()+2)/sky:getWidth(), view.zoom/8, 0, 256)
-  
+
   local minR = math.max(terrain.rMin, math.floor((view.y - view.zoom * (love.graphics.getHeight() / 2)) / 32))
   local maxR = math.min(terrain.rMax, math.floor((view.y + view.zoom * (love.graphics.getHeight() / 2)) / 32))
   local minC = math.max(terrain.cMin, math.floor((view.x - view.zoom * (love.graphics.getWidth()  / 2)) / 32))

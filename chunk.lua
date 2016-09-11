@@ -4,7 +4,7 @@ function Chunk:new()
   local o = {}
   setmetatable(o, self)
   self.__index = self
-  
+
   o.generated = false
   o.treesGenerated = false
   o.r = nil
@@ -31,7 +31,7 @@ function Chunk:new()
   for i = 1, 16 do
     o.lightSet[i] = {}
   end
-  
+
   return o
 end
 
@@ -45,14 +45,14 @@ function Chunk:generate(seed, chunkR, chunkC)
         self.perlin[r][c] = 0
       end
     end
-  
+
   else
 
     self.perlin = self:generatePerlin(seed, chunkR, chunkC)
-    
+
     local absR
     local absC
-    
+
     self.block = {}
     for r = 1, 32 do
       absR = chunkR * 32 + r
@@ -64,14 +64,14 @@ function Chunk:generate(seed, chunkR, chunkC)
         if absR < 0 then
           value = value - absR * 0.02
         end
-        
+
         if value > 0.5 then self.block[r][c] = AIR
         elseif value > 1.4 - dirtMargin or value < -0.6 then
           self.block[r][c] = DIRT
           self.hasDirt = true
         else self.block[r][c] = STONE
         end
-        
+
         if self.block[r][c] == STONE and self.coalNoise[r][c] > 0.08 then self.block[r][c] = COAL_ORE end
       end
     end
@@ -112,17 +112,17 @@ function Chunk:generatePerlin(seed, chunkR, chunkC)
 end
 
 function Chunk:perlinComponent2D(seed, chunkR, chunkC, N, amplitude)
-  
+
   local topEdge1    = chunkR * 32 + 1
   local bottomEdge1 = (chunkR + 1) * 32 + 1
   local leftEdge1   = chunkC * 32 + 1
   local rightEdge1  = (chunkC + 1) * 32 + 1
-  
+
   local topEdge2    = math.floor((topEdge1    - 1) / N) - 1
   local bottomEdge2 = math.ceil ((bottomEdge1 - 1) / N) + 1
   local leftEdge2   = math.floor((leftEdge1   - 1) / N) - 1
   local rightEdge2  = math.ceil ((rightEdge1  - 1) / N) + 1
-  
+
   local rawData = {}
   local finalData = {}
   for r = topEdge2, bottomEdge2 do
@@ -131,7 +131,7 @@ function Chunk:perlinComponent2D(seed, chunkR, chunkC, N, amplitude)
       rawData[r - topEdge2 + 1][c - leftEdge2 + 1] = amplitude * rand:get(seed + r, c)
     end
   end
-  
+
   local interpData = self:interpolate2D(rawData, chunkR, chunkC, N)
   for r = 1, 32 do
     finalData[r] = {}
@@ -143,17 +143,17 @@ function Chunk:perlinComponent2D(seed, chunkR, chunkC, N, amplitude)
 end
 
 function Chunk:interpolate2D(values, chunkR, chunkC, N)
-  
+
   local topEdge1    = chunkR * 32 + 1
   local bottomEdge1 = (chunkR + 1) * 32 + 1
   local leftEdge1   = chunkC * 32 + 1
   local rightEdge1  = (chunkC + 1) * 32 + 1
-  
+
   local topEdge2    = math.floor((topEdge1    - 1) / N) - 1
   local bottomEdge2 = math.ceil ((bottomEdge1 - 1) / N) + 1
   local leftEdge2   = math.floor((leftEdge1   - 1) / N) - 1
   local rightEdge2  = math.ceil ((rightEdge1  - 1) / N) + 1
-  
+
   local newData1 = {}
   local min
   local max
@@ -173,7 +173,7 @@ function Chunk:interpolate2D(values, chunkR, chunkC, N)
     end
   end
   assert(#newData1[1] == 32, "wrong length. chunkR="..chunkR.." chunkC="..chunkC.." N="..N)
-  
+
   local newData2 = {}
   for r = 1, 32 do
     newData2[r] = {}
@@ -194,13 +194,13 @@ function Chunk:interpolate2D(values, chunkR, chunkC, N)
       end
     end
   end
-  
+
   for r = 1, 32 do
     for c = 1, 32 do
       assert(newData2[r][c] ~= nil, "nil value, r="..r.." c="..c.." N="..N)
     end
   end
-  
+
   return newData2
 end
 
@@ -243,11 +243,12 @@ end
 
 function Chunk:render()
   if self.framebuffer == nil then
-    self.framebuffer = love.graphics.newFramebuffer(512, 512)
+    self.framebuffer = love.graphics.newCanvas(512, 512)
     self.framebuffer:setFilter("linear", "nearest")
   end
   if not self.generated then return end
-  love.graphics.setRenderTarget(self.framebuffer)
+  love.graphics.setCanvas(self.framebuffer)
+  love.graphics.clear()
   love.graphics.setColor(255, 255, 255, 255)
   local num, base
   for r = 1, 32 do
@@ -264,17 +265,18 @@ function Chunk:render()
       end
     end
   end
-  love.graphics.setRenderTarget()
+  love.graphics.setCanvas()
   self.changed = false
 end
 
 function Chunk:renderPerlin()
   if self.framebufferPerlin == nil then
-    self.framebufferPerlin = love.graphics.newFramebuffer(512, 512)
+    self.framebufferPerlin = love.graphics.newCanvas(512, 512)
     self.framebufferPerlin:setFilter("linear", "nearest")
   end
   if not self.generated then return end
-  love.graphics.setRenderTarget(self.framebufferPerlin)
+  love.graphics.setCanvas(self.framebufferPerlin)
+  love.graphics.clear()
   love.graphics.setColor(255, 255, 255, 255)
   for r = 1, 32 do
     for c = 1, 32 do
@@ -284,7 +286,7 @@ function Chunk:renderPerlin()
       end
     end
   end
-  love.graphics.setRenderTarget()
+  love.graphics.setCanvas()
 end
 
 function Chunk:generateTrees()

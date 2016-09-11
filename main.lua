@@ -9,7 +9,7 @@ love.filesystem.load("loadgraphics.lua")()
 love.filesystem.load("entity.lua")()
 love.filesystem.load("gameplay.lua")()
 love.filesystem.load("inventory.lua")()
-love.filesystem.load("AnAL.lua")()
+anim8 = require 'anim8/anim8'
 love.filesystem.setIdentity("lovecraft")
 
 view = {zoom = 32, x = 0, y = 0}
@@ -31,9 +31,9 @@ g = 40
 
 
 function love.load()
-  generator = love.thread.newThread("generator", "generator.lua")
+  generator = love.thread.newThread("generator.lua")
   generator:start()
-  
+
   player = Player:new()
   terrain = Terrain:new()
   terrain:generateInitial()
@@ -45,11 +45,11 @@ function love.load()
   while terrain:getBlock(math.floor(player.y), math.floor(player.x) + 1) ~= AIR do
     player.y = player.y - 1
   end
-  
+
   view.x = player.x
   view.y = player.y - player.height / 2
   first = true
-  
+
   player.inventory:give(WOOD_SHOVEL) -- Just temporary, for testing
 end
 
@@ -62,7 +62,7 @@ function love.update(dt)
   if not first then
     player:update(dt)
   end
-  
+
   for i = 1, #terrain.entities do
     local entity = terrain.entities[i]
     if entity.falling then
@@ -70,13 +70,13 @@ function love.update(dt)
       entity.y = entity.y + entity.vy * dt
     end
   end
-  
+
   checkCollisions(terrain, player)
-  
+
   if showInventory then handleInventoryInput(player)
   else handleGameplayInput(player, terrain, dt)
   end
-  
+
   view.x = view.x + (player.x - view.x) * 0.2
   view.y = view.y + (player.y - player.height / 2 - view.y) * 0.2
   local viewDist = pythag(view.x, view.y, player.x, player.y)
@@ -86,11 +86,11 @@ function love.update(dt)
     view.y = player.y - (player.y - view.y) * (maxViewDist / viewDist)
   end
   first = false
-  
+
   placeTime = placeTime + dt
   player.walk:update(dt)
   player.hook:update(terrain, dt)
-  
+
   -- Generate new chunks
   for r = math.floor((player.y - 80) / 32), math.floor((player.y + 80) / 32) do
     for c = math.floor((player.x - 80) / 32), math.floor((player.x + 80) / 32) do
@@ -110,23 +110,24 @@ function love.draw()
   end
   love.graphics.setColor(255, 255, 255, 255)
   player:draw(view)
-  
+
   love.graphics.setColor(0, 0, 0, cursorAlpha)
   if inreach and not showInventory then
-    love.graphics.setLine(view.zoom/32, "rough")
+    love.graphics.setLineWidth(view.zoom/32)
+    love.graphics.setLineStyle("rough")
     love.graphics.rectangle("line", (math.ceil(cursor.x)-1-view.x)*view.zoom + love.graphics.getWidth()/2, (math.ceil(cursor.y)-1-view.y)*view.zoom+love.graphics.getHeight()/2, view.zoom, view.zoom)
   end
-  
+
   if mineProgress > 0 and mineProgress <= 1 then
     love.graphics.draw(breakImage[math.ceil(mineProgress * 8)], (mineBlock.c-1-view.x)*view.zoom + love.graphics.getWidth()/2, (mineBlock.r-1-view.y)*view.zoom+love.graphics.getHeight()/2, 0, view.zoom/16, view.zoom/16)
   end
-  
+
   if showInventory then
     player.inventory:draw()
   else
     player.inventory:drawHotbar()
   end
-  
+
   if debug then
     love.graphics.setColor(0, 0, 0, 255)
     love.graphics.print(love.timer.getFPS() .. " fps", love.graphics.getWidth() - 150, 50)
@@ -142,17 +143,19 @@ function love.keypressed(k, u)
     end
   else
     if k == "escape" then
-      generator:send("command", "quit")
+      local command_channel = love.thread.getChannel('generator_command')
+      command_channel:clear()
+      command_channel:push("quit")
       generator:wait()
-      love.event.push("q")
-    elseif k == " " then
+      love.event.push("quit")
+    elseif k == "space" then
       if player.hook.fired then
         player.hook:reset()
         hookRelease = true
       end
     end
   end
-  
+
   if k == "p" then
     --showPerlin = not showPerlin
   elseif k == "f3" then
@@ -167,13 +170,13 @@ function love.keypressed(k, u)
   elseif k == "g" then
     player.hook:fire(player.x, player.y - player.height/2, cursor.x - player.x, cursor.y - (player.y - player.height/2))
   end
-  
+
 end
 
 
 
 function love.keyreleased(k)
-  if k == " " then
+  if k == "space" then
     hookRelease = false
   end
 end
@@ -184,12 +187,18 @@ function love.mousepressed(x, y, button)
   if showInventory then
     player.inventory:handleInput(button)
   else
-    if button == "m" then
+    if button == 3 then
       player.hook:fire(player.x, player.y - player.height/2, cursor.x - player.x, cursor.y - (player.y - player.height/2))
-    elseif button == "wd" then
-      player.inventory:selectNext()
-    elseif button == "wu" then
+    end
+  end
+end
+
+function love.wheelmoved(x, y)
+  if not showInventory then
+    if y > 0 then
       player.inventory:selectPrev()
+    elseif y < 0 then
+      player.inventory:selectNext()
     end
   end
 end
@@ -207,6 +216,6 @@ end
 
 function love.quit()
   --This will be printed to the console on quit
-    
+
   print("Thanks for playing. Please play again soon!")
 end

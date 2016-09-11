@@ -1,8 +1,8 @@
 function handleGameplayInput(player, terrain, dt)
   cursor.x = (love.mouse.getX() - love.graphics.getWidth()  / 2) / view.zoom + view.x
   cursor.y = (love.mouse.getY() - love.graphics.getHeight() / 2) / view.zoom + view.y
-  
-  if not player.hook.hooked and love.keyboard.isDown(" ") and not player.falling and not hookRelease then
+
+  if not player.hook.hooked and love.keyboard.isDown("space") and not player.falling and not hookRelease then
     player.falling = true
     player.vy = -15
   end
@@ -22,22 +22,22 @@ function handleGameplayInput(player, terrain, dt)
       player.hook.push = 0
     end
   end
-  
+
   if love.keyboard.isDown("w") or love.keyboard.isDown("a") or love.keyboard.isDown("s") or love.keyboard.isDown("d") then
     cursorFade = true
   end
-  if love.mouse.getX() ~= oldMouse.x or love.mouse.getY() ~= oldMouse.y or love.mouse.isDown("l") or love.mouse.isDown("r") then
+  if love.mouse.getX() ~= oldMouse.x or love.mouse.getY() ~= oldMouse.y or love.mouse.isDown(1) or love.mouse.isDown(2) then
     cursorFade = false
     cursorAlpha = 255
   end
   if cursorFade then cursorAlpha = math.max(0, cursorAlpha - dt * 255 / 5) end
   oldMouse.x = love.mouse.getX()
   oldMouse.y = love.mouse.getY()
-  
+
   inreach = (pythag(cursor.x, cursor.y, player.x, player.y - player.height/2) < 5)
   if inreach then
     local block = terrain:getBlock(math.ceil(cursor.y), math.ceil(cursor.x))
-    if love.mouse.isDown("l") and block ~= AIR and block ~= UNGENERATED then
+    if love.mouse.isDown(1) and block ~= AIR and block ~= UNGENERATED then
       tool = player.inventory:checkCurrent().id
       if math.ceil(cursor.x) == mineBlock.c and math.ceil(cursor.y) == mineBlock.r then
         mineProgress = mineProgress + mineSpeedMultiplier(block, tool) * dt / durability[block]
@@ -53,12 +53,12 @@ function handleGameplayInput(player, terrain, dt)
         mineBlock.c = math.ceil(cursor.x)
         mineProgress = dt / mineSpeedMultiplier(block, tool) * durability[block]
       end
-    elseif love.mouse.isDown("r") and block == AIR and placeTime > 0.2 then
+    elseif love.mouse.isDown(2) and block == AIR and placeTime > 0.2 then
       local x = math.ceil(cursor.x)
       local y = math.ceil(cursor.y)
       if x - 1 >= player.x + player.width / 2 or x <= player.x - player.width / 2
       or y - 1 >= player.y or y <= player.y - player.height then
-        if player.inventory:checkCurrent().id < 1000 then
+        if player.inventory:checkCurrent().id ~= nil and player.inventory:checkCurrent().id < 1000 then
           terrain:setBlock(y, x, player.inventory:takeCurrent().id)
           placeTime = 0
         end

@@ -17,7 +17,7 @@ function GrapplingHook:new(player)
   o.dAngleDT = 0
   o.player = player
   o.maxLength = 30
-  
+
   return o
 end
 
@@ -39,7 +39,7 @@ function GrapplingHook:hook()
   self.vy = 0
   self.length = math.sqrt((self.player.x - self.x)^2 + (self.player.y - player.height/2 - self.y)^2)
   self:setAngle(math.atan2(self.player.y - player.height/2 - self.y, self.player.x - self.x))
-  
+
   if self.player.falling then
     -- Find initial angular velocity:
     local angleDiff = math.atan2(self.player.vy, self.player.vx) - self.angle
@@ -128,10 +128,10 @@ function GrapplingHook:update(terrain, dt)
         self:reset()
         return
       end
-      
+
       local frac = 1
       local moveFrac = 1
-      
+
       if self.vx > 0 and terrain:getBlock(math.ceil(self.y), math.ceil(self.x)) ~= AIR then
         -- Check right hit
         frac = 1.01 * (math.ceil(self.oldX) - self.oldX) / (self.x - self.oldX)
@@ -188,6 +188,7 @@ end
 function GrapplingHook:draw(view, x, y)
   if not self.fired then return end
   love.graphics.setColor(0, 0, 0, 255)
-  love.graphics.setLine(view.zoom/16, "smooth")
+  love.graphics.setLineWidth(view.zoom/16)
+  love.graphics.setLineStyle("smooth")
   love.graphics.line((x-view.x)*view.zoom + love.graphics.getWidth()/2, (y-view.y)*view.zoom + love.graphics.getHeight()/2, (self.x-view.x)*view.zoom  + love.graphics.getWidth()/2, (self.y-view.y)*view.zoom  + love.graphics.getHeight()/2)
 end

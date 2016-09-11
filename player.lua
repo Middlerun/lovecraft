@@ -24,8 +24,10 @@ function Player:new()
   o.land:setFilter("linear", "nearest")
   o.walkImg = love.graphics.newImage("gfx/rabbitWalk.png")
   o.walkImg:setFilter("linear", "nearest")
-  o.walk = newAnimation(o.walkImg, 64, 128, 0.05, 11)
-  o.walk:play()
+  -- o.walk = newAnimation(o.walkImg, 64, 128, 0.05, 11)
+  o.walkGrid = anim8.newGrid(64, 128, o.walkImg:getWidth(), o.walkImg:getHeight())
+  o.walk = anim8.newAnimation(o.walkGrid('1-11', 1), 0.05)
+  -- o.walk:play()
   o.walking = false
   o.inventory = {}
   o.oldX = o.x
@@ -34,7 +36,7 @@ function Player:new()
   o.hook = GrapplingHook:new(o)
   o.landTime = 0
   o.inventory = Inventory:new()
-  
+
   return o
 end
 
@@ -72,15 +74,15 @@ function Player:update(dt)
     end
     self.x = self.x + self.vx * dt
     self.y = self.y + self.vy * dt
-    
+
     if not self.falling and math.abs(self.vx) > 0.5 and (love.keyboard.isDown("a") or love.keyboard.isDown("d")) and not showInventory then
-      if not self.walking then self.walk:seek(5) end
+      if not self.walking then self.walk:gotoFrame(5) end
       self.walking = true
     else
       self.walking = false
     end
   end
-  
+
   self.landTime = self.landTime - dt
 end
 
@@ -88,7 +90,7 @@ function Player:draw(view)
   self.hook:draw(view, self.x, self.y - self.height/2)
   love.graphics.setColor(255, 255, 255, 255)
   if self.walking then
-    self.walk:draw((self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
+    self.walk:draw(self.walkImg, (self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom+love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
   elseif self.falling and self.vy < 0 and not self.hook.hooked then
     love.graphics.draw(self.jump1, (self.x-view.x)*view.zoom + love.graphics.getWidth()/2, (self.y-view.y+0.1)*view.zoom + love.graphics.getHeight()/2, 0, self.direction * view.zoom/32, view.zoom/32, 34, 103)
   elseif self.falling then
