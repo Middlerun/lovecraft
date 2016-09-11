@@ -13,17 +13,24 @@ function Chunk:new()
   o.block = {}
   o.perlin = {}
   o.coalNoise = {}
+  o.sunLight = {}
   for r = 1, 32 do
     o.block[r] = {}
     o.perlin[r] = {}
     o.coalNoise[r] = {}
+    o.sunLight[r] = {}
     for c = 1, 32 do
       o.block[r][c] = UNGENERATED
       o.perlin[r][c] = 0
+      o.sunLight[r][c] = 0
     end
   end
   o.hasDirt = false
   o.changed = true
+  o.lightSet = {}
+  for i = 1, 16 do
+    o.lightSet[i] = {}
+  end
   
   return o
 end
@@ -218,6 +225,16 @@ function Chunk:setBlock(r, c, block)
   if r == 32 and self.terrain:hasChunk(self.r+1, self.c) then self.terrain:getChunk(self.r+1, self.c).changed = true end
   if c == 1  and self.terrain:hasChunk(self.r, self.c-1) then self.terrain:getChunk(self.r, self.c-1).changed = true end
   if c == 32 and self.terrain:hasChunk(self.r, self.c+1) then self.terrain:getChunk(self.r, self.c+1).changed = true end
+end
+
+function Chunk:setSunLight(r, c, level)
+  if not self.generated then return end
+  if r < 1 or r > 32 or c < 1 or c > 32 then
+    --self.terrain:setSunLight(self.r * 32 + r, self.c * 32 + c, level)
+    return
+  end
+  self.sunLight[r][c] = level
+  table.insert(self.lightSet[level], {r, c})
 end
 
 function Chunk:isGenerated()

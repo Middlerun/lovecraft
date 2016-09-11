@@ -95,6 +95,44 @@ function Terrain:generateInitial()
       end
     end
   end
+  
+end
+
+function Terrain:calculateSunLight()
+  for c = self.cMin, self.cMax do
+    local topFound = false
+    local top
+    for r = self.rMin, self.rMax do
+      if not topFound and self:hasChunk(r, c) then
+        topFound = true
+        top = r
+      end
+    end
+    if top >= 0 then break end
+    
+    for c2 = 1, 32 do
+      local carry = false
+      if self:getChunk(r, c):getBlock(1, c2) == AIR then carry = true end
+      for r = top, self.rMax do
+        if carry and not self:hasChunk(r, c) and r >= 0 then break
+        elseif carry then self:getChunk(r, c):setSunLight(1, c2, 16)
+        else break end
+        if self:hasChunk(r, c) then
+          for r2 = 1, 31 do
+            if self:getChunk(r, c).sunLight[r2][c2] == 16 and self:getChunk(r, c):getBlock(1, c2) == AIR then
+              self:getChunk(r, c):setSunLight(r2+1, c2, 16)
+            else
+              break
+            end
+          end
+          if self:getChunk(r, c).sunLight[32][c2] == 16 and self:getChunk(r, c):getBlock(32, c2) == AIR then carry = true
+          else carry = false end
+        end
+      end
+    end
+  end
+  
+  
 end
 
 function Terrain:generate(r, c)
